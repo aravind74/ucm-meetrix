@@ -1,0 +1,6 @@
+@Meetrix.WebAPI_HostAddress = http://localhost:5202
+
+GET {{Meetrix.WebAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
