@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Meetrix.Core\Meetrix.Core.csproj" />
     <ProjectReference Include="..\Meetrix.Infrastructure\Meetrix.Infrastructure.csproj" />
   </ItemGroup>
 

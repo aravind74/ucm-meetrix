@@ -1,4 +1,8 @@
-﻿namespace Meetrix.WebAPI.DTOs
-{
-    public class LoginResponseDto(string Token, int UserId, string Email, string FullName);
-}
+﻿namespace Meetrix.WebAPI.DTOs;
+
+public sealed record LoginResponseDto(
+    string Token,
+    int UserId,
+    string Email,
+    string FullName
+);

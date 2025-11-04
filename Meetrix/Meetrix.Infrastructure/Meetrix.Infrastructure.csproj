@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Meetrix.Core\Meetrix.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DB\" />
+  </ItemGroup>
+
 </Project>

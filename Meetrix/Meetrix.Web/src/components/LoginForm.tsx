@@ -1,61 +1,48 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-const LoginForm = () => {
+interface LoginFormProps {
+  onSubmit: (email: string, password: string) => void;
+  loading?: boolean;
+  error?: string | null;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, loading, error }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login submitted");
+    onSubmit(email, password);
   };
 
   return (
-    <div className="bg-white shadow-xl rounded-lg p-8 w-full max-w-md">
-      <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
-        Login to Meetrix
-      </h2>
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label>Email</label><br />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Enter your email"
-            required
-          />
-        </div>
+      <div>
+        <label>Password</label><br />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700">
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            placeholder="Enter your password"
-            required
-          />
-        </div>
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
-        >
-          Sign In
-        </button>
-      </form>
-
-      <p className="text-center text-sm text-gray-600 mt-4">
-        Admin or Employee login based on account role.
-      </p>
-    </div>
+      <button type="submit" disabled={loading}>
+        {loading ? "Logging in..." : "Login"}
+      </button>
+    </form>
   );
 };
 
