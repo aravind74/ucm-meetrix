@@ -4,5 +4,6 @@ public sealed record LoginResponseDto(
     string Token,
     int UserId,
     string Email,
-    string FullName
+    string FullName,
+    string Role
 );

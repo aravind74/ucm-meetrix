@@ -6,6 +6,7 @@ type AuthState = {
   userId: number | null;
   email: string | null;
   fullName: string | null;
+  role: string | null;
 };
 
 type AuthContextValue = {
@@ -24,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userId: null,
     email: null,
     fullName: null,
+    role: null,
   });
 
   // Load from localStorage on first render
@@ -45,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: data.userId,
       email: data.email,
       fullName: data.fullName,
+      role: data.role,
     };
     setAuth(newAuth);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newAuth));
@@ -59,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: null,
       email: null,
       fullName: null,
+      role: null
     });
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("meetrix_token");

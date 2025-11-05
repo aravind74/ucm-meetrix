@@ -63,8 +63,8 @@ namespace Meetrix.WebAPI.Controllers
         {
             new(ClaimTypes.NameIdentifier, res.userId.ToString()),
             new(JwtRegisteredClaimNames.Sub, res.userId.ToString()),
-            new(JwtRegisteredClaimNames.Email, res.email)
-            // add roles/extra claims later if you introduce them
+            new(JwtRegisteredClaimNames.Email, res.email),
+            new(ClaimTypes.Role, res.roleName)
         };
 
             var token = new JwtSecurityToken(
@@ -76,7 +76,7 @@ namespace Meetrix.WebAPI.Controllers
             );
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return Ok(new LoginResponseDto(jwt, res.userId, res.email, res.fullName));
+            return Ok(new LoginResponseDto(jwt, res.userId, res.email, res.fullName, res.roleName));
         }
     }
 }

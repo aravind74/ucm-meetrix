@@ -1,3 +1,4 @@
+// src/components/LoginForm.tsx
 import React, { useState } from "react";
 
 interface LoginFormProps {
@@ -16,30 +17,32 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, loading, error }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>Email</label><br />
+    <form className="login-form" onSubmit={handleSubmit}>
+      <div className="form-field">
+        <label>Email</label>
         <input
           type="email"
           value={email}
+          autoComplete="email"
           onChange={(e) => setEmail(e.target.value)}
           required
         />
       </div>
 
-      <div>
-        <label>Password</label><br />
+      <div className="form-field">
+        <label>Password</label>
         <input
           type="password"
           value={password}
+          autoComplete="current-password"
           onChange={(e) => setPassword(e.target.value)}
           required
         />
       </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <div className="form-error">{error}</div>}
 
-      <button type="submit" disabled={loading}>
+      <button type="submit" disabled={loading} className="login-button">
         {loading ? "Logging in..." : "Login"}
       </button>
     </form>

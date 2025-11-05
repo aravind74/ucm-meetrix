@@ -14,7 +14,7 @@ const RoomsList: React.FC<RoomsListProps> = ({ rooms }) => {
     <ul style={{ listStyle: "none", padding: 0 }}>
       {rooms.map((room) => (
         <li
-          key={room.id}
+          key={room.roomId}
           style={{
             border: "1px solid #ddd",
             borderRadius: 8,

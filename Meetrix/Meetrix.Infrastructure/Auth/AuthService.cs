@@ -27,6 +27,7 @@ public sealed class AuthService : IAuthService
             LastName = request.LastName,
             Email = email,
             PasswordHash = hash,
+            UserRoleId = 2,
             IsDifferentlyAbled = request.IsDifferentlyAbled,
             IsActive = true,
             LastUpdated = DateTime.UtcNow,
@@ -38,20 +39,22 @@ public sealed class AuthService : IAuthService
         return entity.UserId;
     }
 
-    public async Task<(bool ok, int userId, string email, string fullName)> ValidateCredentialsAsync(string email, string password, CancellationToken ct = default)
+    public async Task<(bool ok, int userId, string email, string fullName, string roleName)> ValidateCredentialsAsync(string email, string password, CancellationToken ct = default)
     {
         email = email.Trim().ToLowerInvariant();
 
         var user = await _db.Users
+            .Include(u => u.UserRole)
             .AsNoTracking()
             .SingleOrDefaultAsync(u => u.Email == email && u.IsActive == true, ct);
 
-        if (user is null) return (false, 0, "", "");
+        if (user is null) return (false, 0, "", "", "");
 
         var ok = BcryptPasswordHasher.Verify(password, user.PasswordHash!);
-        if (!ok) return (false, 0, "", "");
+        if (!ok) return (false, 0, "", "", "");
 
-        var full = string.Join(' ', new[] { user.FirstName, user.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
-        return (true, user.UserId, user.Email!, full);
+        var fullName = string.Join(' ', new[] { user.FirstName, user.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+        var roleName = user.UserRole?.RoleName ?? "Employee";
+        return (true, user.UserId, user.Email!, fullName, roleName);
     }
 }
