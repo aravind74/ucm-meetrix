@@ -1,4 +1,3 @@
-// src/layout/AppLayout.tsx
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
@@ -16,7 +15,7 @@ const AppLayout: React.FC = () => {
       />
 
       <div className="app-main">
-        <Navbar /> {/* no toggle button here anymore */}
+        <Navbar />
         <Breadcrumbs />
         <main className="app-content">
           <Outlet />

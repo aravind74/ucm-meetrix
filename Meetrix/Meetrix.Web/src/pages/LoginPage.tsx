@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import LoginForm from "../components/LoginForm";
 import { useAuth } from "../auth/AuthContext";
 import { loginApi } from "../api/login-service";
+import logo from "../assets/logo.png";
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -33,8 +34,37 @@ const LoginPage: React.FC = () => {
     <div className="login-page">
       <div className="login-card">
         <div className="login-card-header">
-          <h1>Meetrix</h1>
-          <p>Smart meeting scheduler</p>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 20,
+            }}
+          >
+            <img
+              src={logo}
+              alt="Meetrix logo"
+              style={{
+                width: 110,
+                height: "auto",
+                objectFit: "contain",
+                userSelect: "none",
+              }}
+            />
+            <h1
+              style={{
+                margin: 0,
+                fontSize: 22,
+                fontWeight: 700,
+                color: "#08185c",
+              }}
+            >
+              Welcome to Meetrix
+            </h1>
+          </div>
+
         </div>
         <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
         <div
