@@ -5,20 +5,20 @@ const AdminDashboardPage: React.FC = () => {
   return (
     <div style={{ padding: 24 }}>
       <h2>Admin Dashboard</h2>
-      <p>Welcome! Here you’ll see room utilization, upcoming bookings, and alerts.</p>
+      <p>To Do</p>
 
       <div style={{ display: "flex", gap: 16, marginTop: 16, flexWrap: "wrap" }}>
         <div style={{ padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
           <h3>Total Rooms</h3>
-          <p>… (later)</p>
+          <p></p>
         </div>
         <div style={{ padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
           <h3>Today&apos;s Bookings</h3>
-          <p>… (later)</p>
+          <p></p>
         </div>
         <div style={{ padding: 16, borderRadius: 8, border: "1px solid #e5e7eb" }}>
           <h3>No-Show Rate</h3>
-          <p>… (later)</p>
+          <p></p>
         </div>
       </div>
     </div>

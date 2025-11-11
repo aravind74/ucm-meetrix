@@ -65,7 +65,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleSidebar }) => {
         </div>
 
         <nav className="sidebar-nav">
-  {renderItem("/rooms", room, "Rooms")}
+  {!isAdmin && (
+    <>
+    {renderItem("/rooms", room, "Rooms")}
+    </>
+  )}
   {isAdmin && (
     <>
       {renderItem("/admin", dashboard, "Dashboard")}

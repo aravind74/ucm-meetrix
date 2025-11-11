@@ -1,7 +1,7 @@
 ﻿namespace Meetrix.WebAPI.DTOs
 {
     public sealed record RoomResponseDto (
-        int? RoomId,
+        int RoomId,
         string RoomName,
         int? Capacity,
         int? Floor,

@@ -445,4 +445,97 @@ body,
   color: #6b7280;
 }
 
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.modal-card {
+  width: 420px;
+  max-width: 90vw;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 18px 20px 16px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.4);
+  border: 1px solid #e5e7eb;
+}
+
+.modal-card.small {
+  width: 380px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.modal-subtitle {
+  margin: 6px 0 14px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.form-field input[type="text"],
+.form-field input[type="number"] {
+  padding: 7px 9px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px #2563eb33;
+}
+
+.form-field-inline {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.modal-footer {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
 

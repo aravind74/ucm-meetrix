@@ -41,5 +41,39 @@ namespace Meetrix.Infrastructure.Services
 
             return result;
         }
+
+        public async Task<bool> UpdateRoomAsync(RoomSummary request)
+        {
+            var room = await _db.Rooms
+                .FirstOrDefaultAsync(r => r.RoomId == request.RoomId && r.IsActive == true);
+
+            if (room == null)
+                return false;
+
+            room.RoomName = request.RoomName.Trim();
+            room.Capacity = request.Capacity;
+            room.IsAccesible = request.IsAccesible;
+            room.LastUpdated = DateTime.UtcNow;
+            room.LastUpdatedBy = request.LastUpdatedBy;
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteRoomAsync(int roomId, int updatedByUserId)
+        {
+            var room = await _db.Rooms
+                .FirstOrDefaultAsync(r => r.RoomId == roomId && r.IsActive == true);
+
+            if (room == null)
+                return false;
+
+            room.IsActive = false;
+            room.LastUpdated = DateTime.UtcNow;
+            room.LastUpdatedBy = updatedByUserId;
+
+            await _db.SaveChangesAsync();
+            return true;
+        }
     }
 }

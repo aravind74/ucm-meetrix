@@ -9,3 +9,11 @@ export async function getRooms(): Promise<any[]> {
   const res = await api.get<RoomsResponse>("/rooms");
   return res.data.items;
 }
+
+export const updateRoom = async (room: Room): Promise<void> => {
+    await api.put(`/rooms/${room.roomId}`, room);
+  };
+  
+  export const deleteRoom = async (roomId: number): Promise<void> => {
+    await api.delete(`/rooms/${roomId}`);
+  };

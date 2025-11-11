@@ -1,7 +1,11 @@
 ﻿using Meetrix.Core.Contracts;
+using Meetrix.Core.Models;
 using Meetrix.WebAPI.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Meetrix.WebAPI.Controllers
 {
@@ -36,5 +40,64 @@ namespace Meetrix.WebAPI.Controllers
 
             return Ok(new { items = result });
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateRoom(int id, [FromBody] RoomResponseDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (id != dto.RoomId)
+                return BadRequest("Route id and body RoomId do not match.");
+
+            int userId = GetUserIdFromClaims();
+
+            var success = await _roomService.UpdateRoomAsync(
+                new RoomSummary
+                {
+                    RoomId = dto.RoomId,
+                    RoomName = dto.RoomName,
+                    Capacity = dto.Capacity,
+                    Floor = dto.Floor,
+                    Description = dto.Description,
+                    IsAccesible = dto.IsAccessible,
+                    LastUpdatedBy = userId,
+                }
+            );
+
+            if (!success)
+                return NotFound();
+
+            return NoContent();
+        }
+
+
+        // DELETE: api/rooms/5
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteRoom(int id)
+        {
+            int userId = GetUserIdFromClaims(); // 0 if not wired
+
+            var success = await _roomService.DeleteRoomAsync(id, userId);
+
+            if (!success)
+                return NotFound();
+
+            return NoContent();
+        }
+
+        private int GetUserIdFromClaims()
+        {
+            // Try NameIdentifier first (since you set it)
+            var claim =
+                User.FindFirst(ClaimTypes.NameIdentifier) ??
+                User.FindFirst(JwtRegisteredClaimNames.Sub);
+
+            if (claim == null)
+                return 0;
+
+            return int.TryParse(claim.Value, out var id) ? id : 0;
+        }
+
     }
 }
