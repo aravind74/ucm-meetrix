@@ -12,6 +12,7 @@ import { ProtectedRoute } from "../auth/ProtectedRoute";
 import { AdminRoute } from "../auth/AdminRoute";
 import AppLayout from "../layouts/AppLayout";
 import RegisterPage from "../pages/RegisterPage";
+import MyBookingsPage from "../pages/MyBookingsPage";
 
 const AppRouter = () => (
   <Router>
@@ -32,10 +33,11 @@ const AppRouter = () => (
         {/* default landing for non-admins */}
         <Route index element={<RoomsPage />} />
         <Route path="rooms" element={<RoomsPage />} />
+        <Route path="/my-bookings" element={<MyBookingsPage />} />
 
         {/* admin dashboard landing */}
         <Route
-          path="admin"
+          path="admin/dashboard"
           element={
             <AdminRoute>
               <AdminDashboardPage />

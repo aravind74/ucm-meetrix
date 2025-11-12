@@ -32,11 +32,13 @@ namespace Meetrix.Infrastructure.Services
                     Capacity = r.Capacity,
                     IsAccesible = r.IsAccesible,
                     Floor = r.Floor,
+                    Description = r.Description,
                     LastUpdated = r.LastUpdated,
                     LastUpdatedBy = r.LastUpdatedBy,
                     IsActive = r.IsActive,
                 })
                 .AsNoTracking()
+                .OrderBy(r => r.RoomName)
                 .ToListAsync(ct);
 
             return result;
@@ -52,6 +54,8 @@ namespace Meetrix.Infrastructure.Services
 
             room.RoomName = request.RoomName.Trim();
             room.Capacity = request.Capacity;
+            room.Floor = request.Floor;
+            room.Description = request.Description;
             room.IsAccesible = request.IsAccesible;
             room.LastUpdated = DateTime.UtcNow;
             room.LastUpdatedBy = request.LastUpdatedBy;

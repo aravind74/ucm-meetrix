@@ -20,7 +20,7 @@ const LoginPage: React.FC = () => {
       login(res);
 
       const role = res.role?.trim().toLowerCase();
-      if (role === "admin") navigate("/admin");
+      if (role === "admin") navigate("/admin/dashboard");
       else navigate("/rooms");
     } catch (err: any) {
       if (err.response?.status === 401) setError("Invalid credentials");

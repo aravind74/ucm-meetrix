@@ -3,5 +3,6 @@ export interface Room {
     roomName: string;
     capacity: number;
     floor: number;
+    description: string;
     isAccessible: boolean;
   }

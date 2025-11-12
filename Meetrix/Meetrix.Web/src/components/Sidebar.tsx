@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import menu from "../assets/menu.svg";
 import room from "../assets/room.svg";
+import booking from "../assets/booking.svg"
 import dashboard from "../assets/dashboard.svg";
 import building from "../assets/building.svg";
 
@@ -68,6 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleSidebar }) => {
   {!isAdmin && (
     <>
     {renderItem("/rooms", room, "Rooms")}
+    {renderItem("/my-bookings", booking, "My Bookings")}
     </>
   )}
   {isAdmin && (

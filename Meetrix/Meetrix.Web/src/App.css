@@ -345,6 +345,15 @@ body,
   color: #9ca3af;
 }
 
+.room-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  color: #6b7280;
+}
+
 /* ---------- Badges ---------- */
 
 .badge {
@@ -424,6 +433,216 @@ body,
 .btn-sm {
   padding: 7px 12px;
   font-size: 13px;
+}
+
+.rooms-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr);
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.rooms-list-column,
+.rooms-side-column {
+  min-width: 0;
+}
+
+.room-card-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.room-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease,
+    transform 0.08s ease;
+}
+
+.room-card:hover {
+  border-color: #cbd5f5;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.room-card-selected {
+  border-color: #08185c;
+  box-shadow: 0 10px 25px rgba(8, 24, 92, 0.15);
+}
+
+.room-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.room-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.room-card-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.room-card-tags {
+  margin: 4px 0 6px;
+}
+
+.room-card-description {
+  font-size: 13px;
+  color: #4b5563;
+  margin: 4px 0 8px;
+}
+
+.room-card-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.room-card-footer-text {
+  font-size: 12px;
+  color: #08185c;
+}
+
+/* Status pill */
+.status-pill {
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-available {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.status-busy {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Light accessible badge */
+.badge-success-light {
+  background: #e0f2fe;
+  color: #075985;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+/* Right panel (schedule) */
+.panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: #0f172a;
+}
+
+.panel-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.schedule-placeholder {
+  margin-top: 8px;
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  font-size: 11px;
+}
+
+.schedule-header-row {
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.schedule-body-row {
+  margin-bottom: 10px;
+}
+
+.slot {
+  border-radius: 8px;
+  padding: 6px 4px;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.slot.available {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.slot.busy {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.schedule-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.legend-dot-available {
+  background: #22c55e;
+}
+
+.legend-dot-busy {
+  background: #ef4444;
+}
+
+.schedule-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* User pill in header */
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+.user-name {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Empty state ---------- */
@@ -536,6 +755,46 @@ body,
   justify-content: flex-end;
   gap: 8px;
 }
+
+.toast-container {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2000;
+}
+
+.toast {
+  min-width: 260px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #f9fafb;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+}
+
+.toast-success {
+  background: #16a34a;
+}
+
+.toast-error {
+  background: #dc2626;
+}
+
+.toast-info {
+  background: #0f766e;
+}
+
+.tabs { display: inline-flex; background: #eef2ff; border-radius: 10px; padding: 4px; }
+.tab-btn {
+  border: none; background: transparent; padding: 8px 14px; border-radius: 8px;
+  font-weight: 600; font-size: 14px; color: #1e3a8a; cursor: pointer;
+}
+.tab-btn.active { background: #fff; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+
+
 
 
 
