@@ -9,6 +9,7 @@ namespace Meetrix.Core.Contracts
 {
     public interface IRoomService
     {
+        Task<RoomSummary> CreateRoomAsync(RoomSummary room);
         Task<IReadOnlyList<RoomSummary>> GetRoomsAsync(int? minCapacity, bool? isAccessible, CancellationToken ct = default);
         Task<bool> UpdateRoomAsync(RoomSummary request);
         Task<bool> DeleteRoomAsync(int roomId, int updatedByUserId);

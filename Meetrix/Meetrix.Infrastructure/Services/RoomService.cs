@@ -14,6 +14,39 @@ namespace Meetrix.Infrastructure.Services
     {
         private readonly AppDbContext _db;
         public RoomService(AppDbContext db) => _db = db;
+
+        public async Task<RoomSummary> CreateRoomAsync(RoomSummary room)
+        {
+            var entity = new Infrastructure.Models.Room
+            {
+                RoomName = room.RoomName,
+                Capacity = room.Capacity,
+                Floor = room.Floor,
+                Description = room.Description,
+                IsAccesible = room.IsAccessible,
+                LastUpdatedBy = room.LastUpdatedBy,
+                LastUpdated = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            _db.Rooms.Add(entity);
+            await _db.SaveChangesAsync();
+
+            // Map back to Core model manually
+            return new RoomSummary
+            {
+                RoomId = entity.RoomId,
+                RoomName = entity.RoomName,
+                Capacity = entity.Capacity,
+                Floor = entity.Floor,
+                Description = entity.Description,
+                IsAccessible = entity.IsAccesible,
+                LastUpdated = entity.LastUpdated,
+                LastUpdatedBy = entity.LastUpdatedBy,
+                IsActive = entity.IsActive
+            };
+        }
+
         public async Task<IReadOnlyList<RoomSummary>> GetRoomsAsync(int? minCapacity, bool? isAccessible, CancellationToken ct = default)
         {
             var query = _db.Rooms.AsQueryable();
@@ -30,7 +63,7 @@ namespace Meetrix.Infrastructure.Services
                     RoomId = r.RoomId,
                     RoomName = r.RoomName,
                     Capacity = r.Capacity,
-                    IsAccesible = r.IsAccesible,
+                    IsAccessible = r.IsAccesible,
                     Floor = r.Floor,
                     Description = r.Description,
                     LastUpdated = r.LastUpdated,
@@ -56,7 +89,7 @@ namespace Meetrix.Infrastructure.Services
             room.Capacity = request.Capacity;
             room.Floor = request.Floor;
             room.Description = request.Description;
-            room.IsAccesible = request.IsAccesible;
+            room.IsAccesible = request.IsAccessible;
             room.LastUpdated = DateTime.UtcNow;
             room.LastUpdatedBy = request.LastUpdatedBy;
 
