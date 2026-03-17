@@ -18,7 +18,7 @@ namespace Meetrix.Core.Models
 
         public int? Floor { get; set; }
 
-        public bool? IsAccesible { get; set; }
+        public bool? IsAccessible { get; set; }
 
         public string? Description { get; set; }
 

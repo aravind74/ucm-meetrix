@@ -1,4 +1,5 @@
-﻿using Meetrix.Core.Contracts;
+﻿using AutoMapper;
+using Meetrix.Core.Contracts;
 using Meetrix.Core.Models;
 using Meetrix.WebAPI.DTOs;
 using Microsoft.AspNetCore.Http;
@@ -14,10 +15,33 @@ namespace Meetrix.WebAPI.Controllers
     public class RoomsController : ControllerBase
     {
         private readonly IRoomService _roomService;
+        private readonly IMapper _mapper;
 
-        public RoomsController(IRoomService roomService)
+        public RoomsController(IRoomService roomService, IMapper mapper)
         {
             _roomService = roomService;
+            _mapper = mapper;
+        }
+
+        // POST: api/rooms
+        [HttpPost]
+        public async Task<IActionResult> CreateRoom([FromBody] RoomRequestDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // DTO → Core
+            var room = _mapper.Map<RoomSummary>(dto);
+
+            room.LastUpdatedBy = GetUserIdFromClaims();
+
+            // Core → Service → DB
+            var created = await _roomService.CreateRoomAsync(room);
+
+            // Core → DTO
+            var response = _mapper.Map<RoomResponseDto>(created);
+
+            return CreatedAtAction(nameof(Get), new { id = response.RoomId }, response);
         }
 
         // GET /api/rooms?minCapacity=6&isAccessible=true
@@ -31,7 +55,7 @@ namespace Meetrix.WebAPI.Controllers
                 r.RoomName,
                 r.Capacity,
                 r.Floor,
-                r.IsAccesible,
+                r.IsAccessible,
                 r.Description,
                 r.LastUpdatedBy,
                 r.LastUpdated,
@@ -48,7 +72,7 @@ namespace Meetrix.WebAPI.Controllers
                 return BadRequest(ModelState);
 
             if (id != dto.RoomId)
-                return BadRequest("Route id and body RoomId do not match.");
+                return BadRequest("Route id and RoomId do not match.");
 
             int userId = GetUserIdFromClaims();
 
@@ -60,7 +84,7 @@ namespace Meetrix.WebAPI.Controllers
                     Capacity = dto.Capacity,
                     Floor = dto.Floor,
                     Description = dto.Description,
-                    IsAccesible = dto.IsAccessible,
+                    IsAccessible = dto.IsAccessible,
                     LastUpdatedBy = userId,
                 }
             );
