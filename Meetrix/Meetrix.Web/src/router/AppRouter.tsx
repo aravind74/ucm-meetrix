@@ -13,6 +13,7 @@ import { AdminRoute } from "../auth/AdminRoute";
 import AppLayout from "../layouts/AppLayout";
 import RegisterPage from "../pages/RegisterPage";
 import MyBookingsPage from "../pages/MyBookingsPage";
+import AdminBookingsPage from "../pages/AdminBookingsPage";
 
 const AppRouter = () => (
   <Router>
@@ -51,6 +52,16 @@ const AppRouter = () => (
           element={
             <AdminRoute>
               <AdminRoomsPage />
+            </AdminRoute>
+          }
+        />
+
+        {/* manage bookings */}
+        <Route
+          path="admin/bookings"
+          element={
+            <AdminRoute>
+              <AdminBookingsPage />
             </AdminRoute>
           }
         />

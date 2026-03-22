@@ -1,4 +1,4 @@
-﻿namespace Meetrix.WebAPI.DTOs
+﻿namespace Meetrix.Core.DTOs
 {
     public sealed record RoomResponseDto (
         int RoomId,
@@ -6,7 +6,7 @@
         int? Capacity,
         int? Floor,
         bool? IsAccessible,
-        string Description,
+        string? Description,
         int? LastUpdatedBy,
         DateTime? LastUpdated,
         bool? IsActive
