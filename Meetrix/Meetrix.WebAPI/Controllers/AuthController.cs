@@ -1,6 +1,6 @@
 ﻿using Meetrix.Core.Contracts;
+using Meetrix.Core.DTOs;
 using Meetrix.Core.Models;
-using Meetrix.WebAPI.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;

@@ -17,10 +17,10 @@ public partial class Booking
     public int RoomId { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime? StartTime { get; set; }
+    public DateTime StartTime { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime? EndTime { get; set; }
+    public DateTime EndTime { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]
@@ -35,6 +35,9 @@ public partial class Booking
     public DateTime? LastUpdated { get; set; }
 
     public bool? IsActive { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? CheckedInAt { get; set; }
 
     [ForeignKey("RoomId")]
     [InverseProperty("Bookings")]

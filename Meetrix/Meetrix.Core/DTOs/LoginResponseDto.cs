@@ -1,4 +1,4 @@
-﻿namespace Meetrix.WebAPI.DTOs;
+﻿namespace Meetrix.Core.DTOs;
 
 public sealed record LoginResponseDto(
     string Token,

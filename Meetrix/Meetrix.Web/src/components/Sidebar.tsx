@@ -76,6 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleSidebar }) => {
     <>
       {renderItem("/admin", dashboard, "Dashboard")}
       {renderItem("/admin/rooms", building, "Manage Rooms")}
+      {renderItem("/admin/bookings", booking, "Manage Bookings")}
     </>
   )}
 </nav>
