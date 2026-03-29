@@ -23,6 +23,7 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<User_Role> User_Roles { get; set; }
+    public virtual DbSet<Waitlist> Waitlists { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

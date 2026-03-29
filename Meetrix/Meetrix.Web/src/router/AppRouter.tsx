@@ -14,6 +14,7 @@ import AppLayout from "../layouts/AppLayout";
 import RegisterPage from "../pages/RegisterPage";
 import MyBookingsPage from "../pages/MyBookingsPage";
 import AdminBookingsPage from "../pages/AdminBookingsPage";
+import MyWaitlistPage from "../pages/MyWaitlistPage";
 
 const AppRouter = () => (
   <Router>
@@ -35,6 +36,7 @@ const AppRouter = () => (
         <Route index element={<RoomsPage />} />
         <Route path="rooms" element={<RoomsPage />} />
         <Route path="/my-bookings" element={<MyBookingsPage />} />
+        <Route path="/my-waitlist" element={<MyWaitlistPage />} />
 
         {/* admin dashboard landing */}
         <Route

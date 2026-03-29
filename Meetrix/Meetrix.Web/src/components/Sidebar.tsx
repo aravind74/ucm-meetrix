@@ -70,6 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleSidebar }) => {
     <>
     {renderItem("/rooms", room, "Rooms")}
     {renderItem("/my-bookings", booking, "My Bookings")}
+    {renderItem("/my-waitlist", dashboard, "My Waitlist")}
     </>
   )}
   {isAdmin && (

@@ -15,10 +15,12 @@ namespace Meetrix.Infrastructure.Services
     public class BookingService : IBookingService
     {
         private readonly AppDbContext _db;
+        private readonly IWaitlistService _waitlistService;
 
-        public BookingService(AppDbContext db)
+        public BookingService(AppDbContext db, IWaitlistService waitlistService)
         {
             _db = db;
+            _waitlistService = waitlistService;
         }
 
         public async Task<BookingSummary> CreateBookingAsync(BookingRequestDto request, int userId, CancellationToken ct = default)
@@ -119,6 +121,8 @@ namespace Meetrix.Infrastructure.Services
             booking.LastUpdated = DateTime.UtcNow;
 
             await _db.SaveChangesAsync(ct);
+
+            await _waitlistService.TryAssignNextFromWaitlistAsync(booking.RoomId, booking.StartTime, booking.EndTime, ct);
             return true;
         }
 
@@ -138,6 +142,7 @@ namespace Meetrix.Infrastructure.Services
                     b.RoomId == roomId &&
                     b.IsActive == true &&
                     b.Status != "Cancelled" &&
+                    b.Status != "NoShow" &&
                     b.StartTime < dayEnd &&
                     b.EndTime > dayStart)
                 .OrderBy(b => b.StartTime)
@@ -150,7 +155,7 @@ namespace Meetrix.Infrastructure.Services
             {
                 var slotEnd = slotStart.AddMinutes(15);
 
-                var isBooked = bookings.Any(b =>
+                var overlappingBooking = bookings.FirstOrDefault(b =>
                     b.StartTime < slotEnd &&
                     b.EndTime > slotStart);
 
@@ -158,7 +163,8 @@ namespace Meetrix.Infrastructure.Services
                 {
                     StartTime = slotStart,
                     EndTime = slotEnd,
-                    IsAvailable = !isBooked
+                    IsAvailable = overlappingBooking == null,
+                    BookedByUserId = overlappingBooking?.UserId
                 });
 
                 slotStart = slotEnd;
@@ -172,14 +178,16 @@ namespace Meetrix.Infrastructure.Services
                 {
                     StartTime = slots[0].StartTime,
                     EndTime = slots[0].EndTime,
-                    IsAvailable = slots[0].IsAvailable
+                    IsAvailable = slots[0].IsAvailable,
+                    BookedByUserId = slots[0].BookedByUserId
                 };
 
                 for (int i = 1; i < slots.Count; i++)
                 {
                     var currentSlot = slots[i];
 
-                    if (currentSlot.IsAvailable == currentWindow.IsAvailable)
+                    if (currentSlot.IsAvailable == currentWindow.IsAvailable &&
+                        currentSlot.BookedByUserId == currentWindow.BookedByUserId)
                     {
                         currentWindow.EndTime = currentSlot.EndTime;
                     }
@@ -191,7 +199,8 @@ namespace Meetrix.Infrastructure.Services
                         {
                             StartTime = currentSlot.StartTime,
                             EndTime = currentSlot.EndTime,
-                            IsAvailable = currentSlot.IsAvailable
+                            IsAvailable = currentSlot.IsAvailable,
+                            BookedByUserId = currentSlot.BookedByUserId
                         };
                     }
                 }
@@ -320,6 +329,37 @@ namespace Meetrix.Infrastructure.Services
 
             await _db.SaveChangesAsync(ct);
             return true;
+        }
+
+        public async Task<int> AutoCancelNoShowBookingsAsync(CancellationToken ct = default)
+        {
+            var now = DateTime.Now;
+
+            var bookingsToCancel = await _db.Bookings
+                .Where(b =>
+                    b.IsActive == true &&
+                    b.Status == "Scheduled" &&
+                    b.CheckedInAt == null &&
+                    b.StartTime.AddMinutes(5) <= now)
+                .ToListAsync(ct);
+
+            if (!bookingsToCancel.Any())
+                return 0;
+
+            foreach (var booking in bookingsToCancel)
+            {
+                booking.Status = "NoShow";
+                booking.LastUpdated = now;
+                booking.LastUpdatedBy = booking.UserId;
+            }
+
+            await _db.SaveChangesAsync(ct);
+
+            foreach (var booking in bookingsToCancel)
+            {
+                await _waitlistService.TryAssignNextFromWaitlistAsync(booking.RoomId, booking.StartTime, booking.EndTime, ct);
+            }
+            return bookingsToCancel.Count;
         }
 
 

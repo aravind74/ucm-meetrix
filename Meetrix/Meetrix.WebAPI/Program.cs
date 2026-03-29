@@ -2,6 +2,7 @@ using Meetrix.Core.Contracts;
 using Meetrix.Infrastructure.Auth;
 using Meetrix.Infrastructure.Data;
 using Meetrix.Infrastructure.Services;
+using Meetrix.WebAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,6 +35,9 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IWaitlistService, WaitlistService>();
+
+builder.Services.AddHostedService<BookingAutoCancelWorker>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>

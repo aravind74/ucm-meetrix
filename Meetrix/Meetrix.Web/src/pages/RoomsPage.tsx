@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getRooms } from "../api/room-service";
 import { createBooking, getRoomAvailability } from "../api/booking-service";
+import { joinWaitlist } from "../api/waitlist-service";
 import type { Room } from "../models/Room";
+import { useAuth } from "../auth/AuthContext";
 
 type Meridiem = "AM" | "PM";
 
@@ -9,6 +11,7 @@ interface AvailabilitySlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
+  bookedByUserId?: number | null;
 }
 
 const hourOptions = Array.from({ length: 12 }, (_, i) =>
@@ -18,6 +21,9 @@ const minuteOptions = ["00", "15", "30", "45"];
 const meridiemOptions: Meridiem[] = ["AM", "PM"];
 
 const RoomsPage: React.FC = () => {
+  const { auth } = useAuth();
+  const currentUserId = auth?.userId;
+
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +51,9 @@ const RoomsPage: React.FC = () => {
   const [endMeridiem, setEndMeridiem] = useState<Meridiem>("AM");
 
   const [purpose, setPurpose] = useState("");
+
+  const [waitlistLoadingKey, setWaitlistLoadingKey] = useState<string | null>(null);
+  const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadRooms = async () => {
@@ -83,9 +92,10 @@ const RoomsPage: React.FC = () => {
       try {
         setSlotsLoading(true);
         setSlotsError(null);
+        setWaitlistError(null);
 
         const data = await getRoomAvailability(selectedRoom.roomId, selectedDate);
-        setSlots(data?.windows ?? data ?? []);
+        setSlots(data?.windows ?? []);
       } catch (err) {
         console.error("Failed to load availability", err);
         setSlots([]);
@@ -173,7 +183,7 @@ const RoomsPage: React.FC = () => {
     hours = hours % 12;
     if (hours === 0) hours = 12;
 
-    return `${String(hours).padStart(2, "0")}:${minutes} ${meridiem}`;
+    return `${hours}:${minutes} ${meridiem}`;
   };
 
   const extract12HourParts = (dateTime: string) => {
@@ -283,6 +293,19 @@ const RoomsPage: React.FC = () => {
       return;
     }
 
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
+
+    if (start < new Date() || end < new Date()) {
+      setBookingError("Cannot book past time.");
+      return;
+    }
+
+    if (start >= end) {
+      setBookingError("End time must be after start time.");
+      return;
+    }
+
     try {
       setBookingLoading(true);
       setBookingError(null);
@@ -297,25 +320,35 @@ const RoomsPage: React.FC = () => {
       setIsBookingModalOpen(false);
       resetBookingForm();
 
-      const now = new Date();
-
-      const start = new Date(startDateTime);
-      const end = new Date(endDateTime);
-
-      if (start < now || end < now) {
-        setBookingError("Cannot book past time.");
-        return;
-      }
-
       const updatedAvailability = await getRoomAvailability(
         selectedRoom.roomId,
         selectedDate
       );
-      setSlots(updatedAvailability?.windows ?? updatedAvailability ?? []);
+      setSlots(updatedAvailability?.windows ?? []);
     } catch (err: any) {
       setBookingError(err?.message || "Failed to create booking.");
     } finally {
       setBookingLoading(false);
+    }
+  };
+
+  const handleJoinWaitlist = async (slot: AvailabilitySlot) => {
+    try {
+      if (!selectedRoom) return;
+
+      setWaitlistError(null);
+      const slotKey = `${slot.startTime}-${slot.endTime}`;
+      setWaitlistLoadingKey(slotKey);
+
+      await joinWaitlist({
+        roomId: selectedRoom.roomId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+      });
+    } catch (err: any) {
+      setWaitlistError(err?.message || "Failed to join waitlist.");
+    } finally {
+      setWaitlistLoadingKey(null);
     }
   };
 
@@ -421,8 +454,9 @@ const RoomsPage: React.FC = () => {
                           </div>
 
                           <span
-                            className={`badge ${room.isAccessible ? "badge-success-light" : "badge-muted"
-                              }`}
+                            className={`badge ${
+                              room.isAccessible ? "badge-success-light" : "badge-muted"
+                            }`}
                           >
                             {room.isAccessible ? "Accessible" : "Standard"}
                           </span>
@@ -453,91 +487,118 @@ const RoomsPage: React.FC = () => {
                   <p>Choose a room from the left to see availability and book it.</p>
                 </div>
               ) : (
-                <>
-                  <div className="selected-room-content">
-                    <div className="room-card-header">
-                      <div>
-                        <h2 className="panel-title">{selectedRoom.roomName}</h2>
-                        <p className="panel-subtitle">
-                          Floor {selectedRoom.floor ?? 0} · {selectedRoom.capacity} seats
-                        </p>
-                      </div>
-
-                      {selectedRoom.isAccessible && (
-                        <span className="badge badge-success-light">Accessible</span>
-                      )}
+                <div className="selected-room-content">
+                  <div className="room-card-header">
+                    <div>
+                      <h2 className="panel-title">{selectedRoom.roomName}</h2>
+                      <p className="panel-subtitle">
+                        Floor {selectedRoom.floor ?? 0} · {selectedRoom.capacity} seats
+                      </p>
                     </div>
 
-                    <p className="room-card-description">
-                      {selectedRoom.description || "No description provided."}
-                    </p>
-
-                    <div className="schedule-actions" style={{ marginBottom: 12 }}>
-                      <button
-                        className="btn-primary"
-                        type="button"
-                        onClick={openBookingModal}
-                      >
-                        Book this room
-                      </button>
-                    </div>
-
-                    {slotsLoading ? (
-                      <div className="empty-state">
-                        <h3>Loading availability...</h3>
-                      </div>
-                    ) : slotsError ? (
-                      <div className="empty-state">
-                        <h3>Could not load schedule</h3>
-                        <p>{slotsError}</p>
-                      </div>
-                    ) : selectedRoomSlots.length === 0 ? (
-                      <div className="empty-state">
-                        <h3>No slots available</h3>
-                        <p>No availability data found for this date.</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="schedule-legend">
-                          <span className="legend-item">
-                            <span className="legend-dot legend-dot-available" />
-                            Available
-                          </span>
-                          <span className="legend-item">
-                            <span className="legend-dot legend-dot-busy" />
-                            Booked
-                          </span>
-                        </div>
-
-                        <div className="selected-room-content">
-                          <div
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                              gap: 8,
-                            }}
-                          >
-                            {selectedRoomSlots.map((slot) => (
-                              <button
-                                key={slot.startTime}
-                                type="button"
-                                className={`slot ${slot.isAvailable ? "available" : "busy"}`}
-                                onClick={() => handleSlotClick(slot)}
-                                disabled={!slot.isAvailable}
-                                title={`${formatTime12Hour(slot.startTime)} - ${formatTime12Hour(
-                                  slot.endTime
-                                )}`}
-                                style={{ cursor: slot.isAvailable ? "pointer" : "not-allowed" }}
-                              >
-                                {formatTime12Hour(slot.startTime)}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </>
+                    {selectedRoom.isAccessible && (
+                      <span className="badge badge-success-light">Accessible</span>
                     )}
                   </div>
-                </>
+
+                  <p className="room-card-description">
+                    {selectedRoom.description || "No description provided."}
+                  </p>
+
+                  <div className="schedule-actions" style={{ marginBottom: 12 }}>
+                    <button
+                      className="btn-primary"
+                      type="button"
+                      onClick={openBookingModal}
+                    >
+                      Book this room
+                    </button>
+                  </div>
+
+                  {slotsLoading ? (
+                    <div className="empty-state">
+                      <h3>Loading availability...</h3>
+                    </div>
+                  ) : slotsError ? (
+                    <div className="empty-state">
+                      <h3>Could not load schedule</h3>
+                      <p>{slotsError}</p>
+                    </div>
+                  ) : selectedRoomSlots.length === 0 ? (
+                    <div className="empty-state">
+                      <h3>No slots available</h3>
+                      <p>No availability data found for this date.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="schedule-legend">
+                        <span className="legend-item">
+                          <span className="legend-dot legend-dot-available" />
+                          Available
+                        </span>
+                        <span className="legend-item">
+                          <span className="legend-dot legend-dot-busy" />
+                          Booked
+                        </span>
+                      </div>
+
+                      <div className="selected-room-content">
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                            gap: 8,
+                          }}
+                        >
+                          {selectedRoomSlots.map((slot) => {
+                            const slotKey = `${slot.startTime}-${slot.endTime}`;
+                            const canJoinWaitlist =
+                              !slot.isAvailable &&
+                              slot.bookedByUserId !== currentUserId;
+
+                            return (
+                              <div
+                                key={slotKey}
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 6,
+                                  minWidth: 0,
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  className={`slot ${slot.isAvailable ? "available" : "busy"}`}
+                                  onClick={() => slot.isAvailable && handleSlotClick(slot)}
+                                  disabled={!slot.isAvailable}
+                                  title={`${formatTime12Hour(slot.startTime)} - ${formatTime12Hour(
+                                    slot.endTime
+                                  )}`}
+                                  style={{ cursor: slot.isAvailable ? "pointer" : "default" }}
+                                >
+                                  {formatTime12Hour(slot.startTime)} - {formatTime12Hour(slot.endTime)}
+                                </button>
+
+                                {canJoinWaitlist && (
+                                  <button
+                                    type="button"
+                                    className="btn-ghost btn-xs"
+                                    onClick={() => handleJoinWaitlist(slot)}
+                                    disabled={waitlistLoadingKey === slotKey}
+                                  >
+                                    {waitlistLoadingKey === slotKey ? "Joining..." : "Join Waitlist"}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {waitlistError && <p className="form-error">{waitlistError}</p>}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
