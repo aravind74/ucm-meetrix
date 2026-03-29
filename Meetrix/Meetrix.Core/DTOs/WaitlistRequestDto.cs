@@ -6,11 +6,10 @@ using System.Threading.Tasks;
 
 namespace Meetrix.Core.DTOs
 {
-    public class AvailabilityWindowDto
+    public class WaitlistRequestDto
     {
+        public int RoomId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public bool IsAvailable { get; set; }
-        public int? BookedByUserId { get; set; }
     }
 }

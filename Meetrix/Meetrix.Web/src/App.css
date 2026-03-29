@@ -559,6 +559,11 @@ body {
   color: #92400e;
 }
 
+.status-pill.no-show {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 /* Light accessible badge */
 .badge-success-light {
   background: #e0f2fe;
@@ -604,9 +609,12 @@ body {
 
 .slot {
   border-radius: 8px;
-  padding: 6px 4px;
+  padding: 6px 8px;
   text-align: center;
   border: 1px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .slot.available {

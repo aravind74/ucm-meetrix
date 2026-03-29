@@ -55,7 +55,7 @@ const MyBookingsPage: React.FC = () => {
         const end = new Date(booking.endTime);
         const status = booking.status?.toLowerCase();
 
-        return end <= now || status === "cancelled" || status === "completed";
+        return end <= now || status === "cancelled" || status === "completed" || status === "noshow";
       })
       .sort((a, b) => {
         const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
@@ -111,6 +111,7 @@ const MyBookingsPage: React.FC = () => {
 
     if (status === "cancelled") return "Cancelled";
     if (status === "completed") return "Completed";
+    if (status === "noshow") return "No Show";
     if (status === "checkedin" || status === "checked in") return "Checked In";
 
     if (start && end && start <= now && end > now) {
@@ -128,6 +129,7 @@ const MyBookingsPage: React.FC = () => {
     if (displayStatus === "completed") return "status-pill completed";
     if (displayStatus === "checked in") return "status-pill checked-in";
     if (displayStatus === "in progress") return "status-pill in-progress";
+    if (displayStatus === "no show") return "status-pill noshow";
 
     return "status-pill";
   };

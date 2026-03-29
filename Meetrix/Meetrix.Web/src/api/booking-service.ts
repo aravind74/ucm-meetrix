@@ -29,14 +29,8 @@ export async function createBooking(request: BookingRequest): Promise<Booking> {
   }
 }
 
-export async function getRoomAvailability(
-  roomId: number,
-  date: string
-): Promise<RoomAvailabilityResponse> {
-  const response = await api.get("/bookings/availability", {
-    params: { roomId, date },
-  });
-
+export async function getRoomAvailability(roomId: number, date: string): Promise<RoomAvailabilityResponse> {
+  const response = await api.get("/bookings/availability", {params: { roomId, date },});
   return response.data;
 }
 
