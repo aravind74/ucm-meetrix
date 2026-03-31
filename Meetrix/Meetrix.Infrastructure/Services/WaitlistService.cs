@@ -10,10 +10,12 @@ namespace Meetrix.Infrastructure.Services
     public class WaitlistService : IWaitlistService
     {
         private readonly AppDbContext _db;
+        private readonly INotificationClient _notificationClient;
 
-        public WaitlistService(AppDbContext db)
+        public WaitlistService(AppDbContext db, INotificationClient notificationClient)
         {
             _db = db;
+            _notificationClient = notificationClient;
         }
 
         public async Task<WaitlistSummary> JoinWaitlistAsync(WaitlistRequestDto request, int userId, CancellationToken ct = default)
@@ -93,9 +95,7 @@ namespace Meetrix.Infrastructure.Services
             };
         }
 
-        public async Task<IReadOnlyList<WaitlistSummary>> GetMyWaitlistAsync(
-            int userId,
-            CancellationToken ct = default)
+        public async Task<IReadOnlyList<WaitlistSummary>> GetMyWaitlistAsync(int userId, CancellationToken ct = default)
         {
             return await _db.Waitlists
                 .Where(w => w.UserId == userId)
@@ -116,10 +116,7 @@ namespace Meetrix.Infrastructure.Services
                 .ToListAsync(ct);
         }
 
-        public async Task<bool> CancelWaitlistAsync(
-            int waitlistId,
-            int userId,
-            CancellationToken ct = default)
+        public async Task<bool> CancelWaitlistAsync(int waitlistId, int userId, CancellationToken ct = default)
         {
             var waitlist = await _db.Waitlists
                 .FirstOrDefaultAsync(w => w.WaitlistId == waitlistId, ct);
@@ -140,11 +137,7 @@ namespace Meetrix.Infrastructure.Services
             return true;
         }
 
-        public async Task<bool> TryAssignNextFromWaitlistAsync(
-            int roomId,
-            DateTime startTime,
-            DateTime endTime,
-            CancellationToken ct = default)
+        public async Task<bool> TryAssignNextFromWaitlistAsync(int roomId, DateTime startTime, DateTime endTime, CancellationToken ct = default)
         {
             var nextWaitlist = await _db.Waitlists
                 .Where(w =>
@@ -189,6 +182,21 @@ namespace Meetrix.Infrastructure.Services
             nextWaitlist.LastUpdated = DateTime.Now;
 
             await _db.SaveChangesAsync(ct);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == booking.UserId, ct);
+            var room = await _db.Rooms.FirstOrDefaultAsync(r => r.RoomId == booking.RoomId, ct);
+
+            if (user != null && room != null)
+            {
+                await _notificationClient.SendWaitlistAssignedAsync(new BookingNotificationRequestDto
+                {
+                    ToEmail = user.Email ?? string.Empty,
+                    UserName = user.FirstName + " " + user.LastName ?? user.Email ?? "",
+                    RoomName = room.RoomName,
+                    StartTime = booking.StartTime,
+                    EndTime = booking.EndTime,
+                    Purpose = booking.Purpose ?? string.Empty
+                }, ct);
+            }
             return true;
         }
     }

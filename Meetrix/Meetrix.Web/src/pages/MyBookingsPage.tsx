@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { cancelBooking, checkInBooking, getMyBookings } from "../api/booking-service";
 import type { Booking } from "../models/Booking";
 
@@ -10,9 +11,19 @@ const MyBookingsPage: React.FC = () => {
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [checkingInId, setCheckingInId] = useState<number | null>(null);
 
+  const [searchParams] = useSearchParams();
+  const highlightedBookingId = Number(searchParams.get("checkInBookingId"));
+  const bookingRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
   useEffect(() => {
     loadBookings();
   }, []);
+
+  useEffect(() => {
+    if (highlightedBookingId) {
+      setTab("upcoming");
+    }
+  }, [highlightedBookingId]);
 
   const loadBookings = async () => {
     try {
@@ -55,7 +66,12 @@ const MyBookingsPage: React.FC = () => {
         const end = new Date(booking.endTime);
         const status = booking.status?.toLowerCase();
 
-        return end <= now || status === "cancelled" || status === "completed" || status === "noshow";
+        return (
+          end <= now ||
+          status === "cancelled" ||
+          status === "completed" ||
+          status === "noshow"
+        );
       })
       .sort((a, b) => {
         const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
@@ -65,6 +81,15 @@ const MyBookingsPage: React.FC = () => {
   }, [bookings]);
 
   const visibleBookings = tab === "upcoming" ? upcomingBookings : pastBookings;
+
+  useEffect(() => {
+    if (!highlightedBookingId || loading) return;
+
+    const el = bookingRefs.current[highlightedBookingId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightedBookingId, loading, visibleBookings]);
 
   const handleCancelBooking = async (bookingId: number) => {
     try {
@@ -163,6 +188,14 @@ const MyBookingsPage: React.FC = () => {
         </div>
       </div>
 
+      {highlightedBookingId > 0 && (
+        <div className="admin-card" style={{ marginBottom: 12 }}>
+          <p style={{ margin: 0 }}>
+            Your booking is highlighted below. Please check in.
+          </p>
+        </div>
+      )}
+
       <div className="admin-toolbar">
         <div className="toolbar-left">
           <div className="tabs">
@@ -214,7 +247,15 @@ const MyBookingsPage: React.FC = () => {
         ) : (
           <div className="bookings-list">
             {visibleBookings.map((booking) => (
-              <div key={booking.bookingId} className="booking-item">
+              <div
+                key={booking.bookingId}
+                ref={(el) => {
+                  bookingRefs.current[booking.bookingId] = el;
+                }}
+                className={`booking-item ${
+                  booking.bookingId === highlightedBookingId ? "booking-item-highlighted" : ""
+                }`}
+              >
                 <div className="booking-item-left">
                   <div className="booking-title-row">
                     <h3 className="booking-room-name">{booking.roomName}</h3>

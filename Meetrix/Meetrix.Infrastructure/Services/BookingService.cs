@@ -16,11 +16,15 @@ namespace Meetrix.Infrastructure.Services
     {
         private readonly AppDbContext _db;
         private readonly IWaitlistService _waitlistService;
+        private readonly INotificationClient _notificationClient;
+        private readonly IGoogleCalendarService _googleCalendarService;
 
-        public BookingService(AppDbContext db, IWaitlistService waitlistService)
+        public BookingService(AppDbContext db, IWaitlistService waitlistService, INotificationClient notificationClient, IGoogleCalendarService googleCalendarService)
         {
             _db = db;
             _waitlistService = waitlistService;
+            _notificationClient = notificationClient;
+            _googleCalendarService = googleCalendarService;
         }
 
         public async Task<BookingSummary> CreateBookingAsync(BookingRequestDto request, int userId, CancellationToken ct = default)
@@ -59,6 +63,26 @@ namespace Meetrix.Infrastructure.Services
             };
 
             _db.Bookings.Add(entity);
+            await _db.SaveChangesAsync(ct);
+
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId, ct);
+
+            if (user != null)
+            {
+                await _notificationClient.SendBookingCreatedAsync(new BookingNotificationRequestDto
+                {
+                    ToEmail = user.Email ?? string.Empty,
+                    UserName = user.FirstName + " " + user.LastName?? user.Email ?? "",
+                    RoomName = room.RoomName,
+                    StartTime = entity.StartTime,
+                    EndTime = entity.EndTime,
+                    Purpose = entity.Purpose ?? string.Empty
+                }, ct);
+            }
+
+            var calendarEventId = await _googleCalendarService.CreateBookingEventAsync(room.RoomName, entity.StartTime, entity.EndTime, entity.Purpose, ct);
+
+            entity.CalendarEventId = calendarEventId;
             await _db.SaveChangesAsync(ct);
 
             return new BookingSummary
@@ -121,6 +145,27 @@ namespace Meetrix.Infrastructure.Services
             booking.LastUpdated = DateTime.UtcNow;
 
             await _db.SaveChangesAsync(ct);
+
+            var room = await _db.Rooms.FirstOrDefaultAsync(r => r.RoomId == booking.RoomId, ct);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == booking.UserId, ct);
+
+            if (room != null && user != null)
+            {
+                await _notificationClient.SendBookingCancelledAsync(new BookingNotificationRequestDto
+                {
+                    ToEmail = user.Email ?? string.Empty,
+                    UserName = user.FirstName + " " + user.LastName ?? user.Email ?? "",
+                    RoomName = room.RoomName,
+                    StartTime = booking.StartTime,
+                    EndTime = booking.EndTime,
+                    Purpose = booking.Purpose ?? string.Empty
+                }, ct);
+            }
+
+            if (!string.IsNullOrWhiteSpace(booking.CalendarEventId))
+            {
+                await _googleCalendarService.DeleteBookingEventAsync(booking.CalendarEventId, ct);
+            }
 
             await _waitlistService.TryAssignNextFromWaitlistAsync(booking.RoomId, booking.StartTime, booking.EndTime, ct);
             return true;
@@ -360,6 +405,50 @@ namespace Meetrix.Infrastructure.Services
                 await _waitlistService.TryAssignNextFromWaitlistAsync(booking.RoomId, booking.StartTime, booking.EndTime, ct);
             }
             return bookingsToCancel.Count;
+        }
+
+        public async Task<int> SendCheckInRemindersAsync(CancellationToken ct = default)
+        {
+            var now = DateTime.Now;
+
+            var bookingsToRemind = await _db.Bookings
+                .Where(b =>
+                    b.IsActive == true &&
+                    b.Status == "Scheduled" &&
+                    b.CheckedInAt == null &&
+                    b.CheckInReminderSentAt == null &&
+                    b.StartTime.AddMinutes(-5) <= now &&
+                    b.StartTime > now)
+                .Include(b => b.Room)
+                .Include(b => b.User)
+                .ToListAsync(ct);
+
+            if (!bookingsToRemind.Any())
+                return 0;
+
+            foreach (var booking in bookingsToRemind)
+            {
+                var checkInLink =
+                    $"http://localhost:5173/my-bookings?checkInBookingId={booking.BookingId}";
+
+                await _notificationClient.SendCheckInReminderAsync(new BookingNotificationRequestDto
+                {
+                    ToEmail = booking.User.Email ?? string.Empty,
+                    UserName = booking.User.FirstName + " " + booking.User.LastName ?? booking.User.Email ?? "User",
+                    RoomName = booking.Room.RoomName,
+                    StartTime = booking.StartTime,
+                    EndTime = booking.EndTime,
+                    Purpose = booking.Purpose ?? string.Empty,
+                    CheckInLink = checkInLink
+                }, ct);
+
+                booking.CheckInReminderSentAt = now;
+                booking.LastUpdated = now;
+                booking.LastUpdatedBy = booking.UserId;
+            }
+
+            await _db.SaveChangesAsync(ct);
+            return bookingsToRemind.Count;
         }
 
 
