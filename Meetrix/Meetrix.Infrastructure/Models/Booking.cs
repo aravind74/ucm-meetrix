@@ -39,6 +39,13 @@ public partial class Booking
     [Column(TypeName = "datetime")]
     public DateTime? CheckedInAt { get; set; }
 
+    [Column(TypeName = "datetime")]
+    public DateTime? CheckInReminderSentAt { get; set; }
+
+    [StringLength(255)]
+    [Unicode(false)]
+    public string? CalendarEventId { get; set; }
+
     [ForeignKey("RoomId")]
     [InverseProperty("Bookings")]
     public virtual Room Room { get; set; } = null!;

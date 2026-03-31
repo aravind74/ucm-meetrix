@@ -26,6 +26,18 @@ namespace Meetrix.WebAPI.Services
 
                     _logger.LogInformation("Auto-cancel check started at {time}", DateTime.Now);
 
+                    //Send check-in reminders for upcoming bookings
+                    var remindersSent = await bookingService.SendCheckInRemindersAsync(stoppingToken);
+
+                    if (remindersSent > 0)
+                    {
+                        _logger.LogInformation(
+                            "Sent {Count} check-in reminder(s) at {time}",
+                            remindersSent,
+                            DateTime.Now);
+                    }
+
+                    // Auto-cancel no-show bookings
                     var cancelledCount = await bookingService.AutoCancelNoShowBookingsAsync(stoppingToken);
 
                     if (cancelledCount > 0)

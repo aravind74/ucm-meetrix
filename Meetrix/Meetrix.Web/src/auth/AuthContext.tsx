@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import type { LoginResponse } from "../models/LoginResponse";
 
 type AuthState = {
@@ -11,6 +11,7 @@ type AuthState = {
 
 type AuthContextValue = {
   auth: AuthState;
+  isReady: boolean;
   login: (data: LoginResponse) => void;
   logout: () => void;
 };
@@ -28,17 +29,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     role: null,
   });
 
-  // Load from localStorage on first render
+  const [isReady, setIsReady] = useState(false);
+
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as AuthState;
         setAuth(parsed);
       } catch {
-        // ignore corrupted data
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("meetrix_token");
       }
     }
+
+    setIsReady(true);
   }, []);
 
   const login = (data: LoginResponse) => {
@@ -49,10 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fullName: data.fullName,
       role: data.role,
     };
+
     setAuth(newAuth);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newAuth));
-
-    // Also store token separately for axios interceptor
     localStorage.setItem("meetrix_token", data.token);
   };
 
@@ -62,14 +67,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: null,
       email: null,
       fullName: null,
-      role: null
+      role: null,
     });
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("meetrix_token");
   };
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={{ auth, isReady, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

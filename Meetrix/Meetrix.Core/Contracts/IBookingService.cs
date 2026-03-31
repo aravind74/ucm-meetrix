@@ -19,5 +19,6 @@ namespace Meetrix.Core.Contracts
         Task<IReadOnlyList<BookingSummary>> GetCancelledBookingsAdminAsync(CancellationToken ct = default);
         Task<bool> CheckInBookingAsync(int bookingId, int userId, CancellationToken ct = default);
         Task<int> AutoCancelNoShowBookingsAsync(CancellationToken ct = default);
+        Task<int> SendCheckInRemindersAsync(CancellationToken ct = default);
     }
 }

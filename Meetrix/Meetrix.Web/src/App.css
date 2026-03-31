@@ -1001,3 +1001,8 @@ body {
 .selected-room-content > * {
   flex-shrink: 0;
 }
+
+.booking-item-highlighted {
+  border: 2px solid #08185c;
+  box-shadow: 0 0 0 3px rgba(8, 24, 92, 0.12);
+}

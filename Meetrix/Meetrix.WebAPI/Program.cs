@@ -36,6 +36,11 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRoomService, RoomService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IWaitlistService, WaitlistService>();
+builder.Services.AddScoped<IGoogleCalendarService, GoogleCalendarService>();
+builder.Services.AddHttpClient<INotificationClient, NotificationClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["NotificationService:BaseUrl"]!);
+});
 
 builder.Services.AddHostedService<BookingAutoCancelWorker>();
 

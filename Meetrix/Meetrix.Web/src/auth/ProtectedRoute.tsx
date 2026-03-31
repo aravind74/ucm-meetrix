@@ -1,17 +1,18 @@
-import React, { type JSX } from "react";
-import { Navigate } from "react-router-dom";
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
-type Props = {
-  children: JSX.Element;
-};
+export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { auth, isReady } = useAuth();
+  const location = useLocation();
 
-export const ProtectedRoute: React.FC<Props> = ({ children }) => {
-  const { auth } = useAuth();
-
-  if (!auth.token) {
-    return <Navigate to="/login" replace />;
+  if (!isReady) {
+    return <div>Loading...</div>;
   }
 
-  return children;
+  if (!auth.token) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return <>{children}</>;
 };

@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36203.30 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetrix.WebAPI", "Meetrix.WebAPI\Meetrix.WebAPI.csproj", "{C579F998-610A-4A1A-83C9-E2356496A189}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetrix.Core", "Meetrix.Core\Meetrix.Core.csproj", "{59A50FDC-6BEB-40CA-BA14-85EB401E5FF5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetrix.Infrastructure", "Meetrix.Infrastructure\Meetrix.Infrastructure.csproj", "{E9B7C8DE-436C-4B79-AC43-6007CD513FDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Meetrix.NotificationService", "Meetrix.NotificationService\Meetrix.NotificationService.csproj", "{57CB26B0-DB1F-4EE3-A029-5B6B3BDDE307}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{E9B7C8DE-436C-4B79-AC43-6007CD513FDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E9B7C8DE-436C-4B79-AC43-6007CD513FDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E9B7C8DE-436C-4B79-AC43-6007CD513FDC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57CB26B0-DB1F-4EE3-A029-5B6B3BDDE307}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57CB26B0-DB1F-4EE3-A029-5B6B3BDDE307}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57CB26B0-DB1F-4EE3-A029-5B6B3BDDE307}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57CB26B0-DB1F-4EE3-A029-5B6B3BDDE307}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
