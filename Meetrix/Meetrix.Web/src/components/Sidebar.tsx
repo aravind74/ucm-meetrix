@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggleSidebar }) => {
   )}
   {isAdmin && (
     <>
-      {renderItem("/admin", dashboard, "Dashboard")}
+      {renderItem("/admin/dashboard", dashboard, "Dashboard")}
       {renderItem("/admin/rooms", building, "Manage Rooms")}
       {renderItem("/admin/bookings", booking, "Manage Bookings")}
     </>

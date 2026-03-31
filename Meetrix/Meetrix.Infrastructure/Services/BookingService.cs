@@ -451,6 +451,73 @@ namespace Meetrix.Infrastructure.Services
             return bookingsToRemind.Count;
         }
 
+        public async Task<AdminDashboardSummaryDto> GetAdminDashboardSummaryAsync(CancellationToken ct = default)
+        {
+            var now = DateTime.Now;
+
+            var totalBookings = await _db.Bookings.CountAsync(ct);
+
+            var currentBookings = await _db.Bookings.CountAsync(b =>
+                b.IsActive == true &&
+                b.Status != "Cancelled" &&
+                b.Status != "Completed" &&
+                b.Status != "NoShow" &&
+                b.EndTime > now,
+                ct);
+
+            var cancelledBookings = await _db.Bookings.CountAsync(b =>
+                b.Status == "Cancelled",
+                ct);
+
+            var noShowBookings = await _db.Bookings.CountAsync(b =>
+                b.Status == "NoShow",
+                ct);
+
+            var totalRooms = await _db.Rooms.CountAsync(r =>
+                r.IsActive == true,
+                ct);
+
+            var activeWaitlistEntries = await _db.Waitlists.CountAsync(w =>
+                w.Status == "Active",
+                ct);
+
+            var topRooms = await _db.Bookings
+                .Where(b => b.Room != null)
+                .GroupBy(b => new { b.RoomId, b.Room.RoomName })
+                .Select(g => new RoomUsageDto
+                {
+                    RoomId = g.Key.RoomId,
+                    RoomName = g.Key.RoomName,
+                    BookingCount = g.Count()
+                })
+                .OrderByDescending(x => x.BookingCount)
+                .Take(5)
+                .ToListAsync(ct);
+
+            var peakHours = await _db.Bookings
+                .Where(b => b.StartTime != null)
+                .GroupBy(b => b.StartTime!.Hour)
+                .Select(g => new HourlyBookingDto
+                {
+                    Hour = g.Key,
+                    BookingCount = g.Count()
+                })
+                .OrderByDescending(x => x.BookingCount)
+                .Take(5)
+                .ToListAsync(ct);
+
+            return new AdminDashboardSummaryDto
+            {
+                TotalBookings = totalBookings,
+                CurrentBookings = currentBookings,
+                CancelledBookings = cancelledBookings,
+                NoShowBookings = noShowBookings,
+                TotalRooms = totalRooms,
+                ActiveWaitlistEntries = activeWaitlistEntries,
+                TopRooms = topRooms,
+                PeakHours = peakHours
+            };
+        }
 
     }
 }
