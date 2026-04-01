@@ -1,4 +1,5 @@
-﻿using Meetrix.Core.Models;
+﻿using Meetrix.Core.DTOs;
+using Meetrix.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace Meetrix.Core.Contracts
 {
     public interface IRoomService
     {
-        Task<RoomSummary> CreateRoomAsync(RoomSummary room);
+        Task<RoomSummary> CreateRoomAsync(RoomRequestDto request, int userId, CancellationToken ct = default);
         Task<IReadOnlyList<RoomSummary>> GetRoomsAsync(int? minCapacity, bool? isAccessible, CancellationToken ct = default);
-        Task<bool> UpdateRoomAsync(RoomSummary request);
+        Task<bool> UpdateRoomAsync(RoomSummary request, int userId, CancellationToken ct);
         Task<bool> DeleteRoomAsync(int roomId, int updatedByUserId);
     }
 }

@@ -97,6 +97,7 @@ const AdminRoomsPage: React.FC = () => {
           isAccessible: editAccessible,
           floor: editFloor,
           description: editDescription.trim(),
+          facilities: [], // default to empty, can be edited later
         });
         showToast("Room created successfully", "success");
         setRooms((prev) => [...prev, newRoom]);
@@ -109,6 +110,7 @@ const AdminRoomsPage: React.FC = () => {
           isAccessible: editAccessible,
           floor: editFloor,
           description: editDescription.trim(),
+          facilities: [], // default to empty, can be edited later
         });
         showToast("Room updated successfully", "success");
         setRooms((prev) =>

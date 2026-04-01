@@ -27,5 +27,7 @@ namespace Meetrix.Core.Models
         public DateTime? LastUpdated { get; set; }
 
         public bool? IsActive { get; set; }
+
+        public List<string> Facilities { get; set; } = new();
     }
 }

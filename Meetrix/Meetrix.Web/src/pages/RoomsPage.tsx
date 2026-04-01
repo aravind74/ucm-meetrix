@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Select from "react-select";
 import { getRooms } from "../api/room-service";
 import { createBooking, getRoomAvailability } from "../api/booking-service";
 import { joinWaitlist } from "../api/waitlist-service";
@@ -12,6 +13,11 @@ interface AvailabilitySlot {
   endTime: string;
   isAvailable: boolean;
   bookedByUserId?: number | null;
+}
+
+interface FacilityOption {
+  value: string;
+  label: string;
 }
 
 const hourOptions = Array.from({ length: 12 }, (_, i) =>
@@ -32,6 +38,9 @@ const RoomsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(() =>
     new Date().toISOString().slice(0, 10)
   );
+  const [accessFilter, setAccessFilter] = useState<"all" | "accessible" | "standard">("all");
+  const [capacityFilter, setCapacityFilter] = useState<"any" | "small" | "medium" | "large">("any");
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
@@ -108,14 +117,28 @@ const RoomsPage: React.FC = () => {
     loadAvailability();
   }, [selectedRoom, selectedDate]);
 
-  const filteredRooms = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return rooms;
+  const allFacilities = useMemo(() => {
+    const values = new Set<string>();
 
-    return rooms.filter((r) =>
-      r.roomName.toLowerCase().includes(query)
-    );
-  }, [rooms, search]);
+    rooms.forEach((room) => {
+      (room.facilities ?? []).forEach((facility) => {
+        if (facility?.trim()) {
+          values.add(facility.trim());
+        }
+      });
+    });
+
+    return Array.from(values).sort((a, b) => a.localeCompare(b));
+  }, [rooms]);
+
+  const facilityOptions = useMemo<FacilityOption[]>(
+    () =>
+      allFacilities.map((facility) => ({
+        value: facility,
+        label: facility,
+      })),
+    [allFacilities]
+  );
 
   const roundToNext15 = (date: Date) => {
     const d = new Date(date);
@@ -352,6 +375,33 @@ const RoomsPage: React.FC = () => {
     }
   };
 
+  const filteredRooms = rooms.filter((r) => {
+    if (!r.roomName.toLowerCase().includes(search.toLowerCase())) return false;
+
+    if (accessFilter === "accessible" && !r.isAccessible) return false;
+    if (accessFilter === "standard" && r.isAccessible) return false;
+
+    if (capacityFilter === "small" && !(r.capacity >= 1 && r.capacity <= 4))
+      return false;
+    if (capacityFilter === "medium" && !(r.capacity >= 5 && r.capacity <= 10))
+      return false;
+    if (capacityFilter === "large" && !(r.capacity >= 11)) return false;
+
+    if (
+      selectedFacilities.length > 0 &&
+      !selectedFacilities.every((facility) =>
+        (r.facilities ?? []).some(
+          (roomFacility) =>
+            roomFacility.trim().toLowerCase() === facility.trim().toLowerCase()
+        )
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="admin-page rooms-page">
@@ -420,7 +470,58 @@ const RoomsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="toolbar-right" />
+          <div className="toolbar-right">
+            <div className="input-inline">
+              <label>Accessibility</label>
+              <select
+                value={accessFilter}
+                onChange={(e) =>
+                  setAccessFilter(
+                    e.target.value as "all" | "accessible" | "standard"
+                  )
+                }
+              >
+                <option value="all">All</option>
+                <option value="accessible">Accessible</option>
+                <option value="standard">Standard</option>
+              </select>
+            </div>
+
+            <div className="input-inline">
+              <label>Capacity</label>
+              <select
+                value={capacityFilter}
+                onChange={(e) =>
+                  setCapacityFilter(
+                    e.target.value as "any" | "small" | "medium" | "large"
+                  )
+                }
+              >
+                <option value="any">Any</option>
+                <option value="small">1–4</option>
+                <option value="medium">5–10</option>
+                <option value="large">11+</option>
+              </select>
+            </div>
+
+            <div className="input-inline facilities-select">
+              <label>Facilities</label>
+              <Select<FacilityOption, true>
+                isMulti
+                options={facilityOptions}
+                value={facilityOptions.filter((option) =>
+                  selectedFacilities.includes(option.value)
+                )}
+                onChange={(selected) =>
+                  setSelectedFacilities(selected.map((item) => item.value))
+                }
+                placeholder="All facilities"
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                classNamePrefix="react-select"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="rooms-workspace">
@@ -429,7 +530,7 @@ const RoomsPage: React.FC = () => {
               {filteredRooms.length === 0 ? (
                 <div className="empty-state">
                   <h3>No matching rooms</h3>
-                  <p>Try a different search term.</p>
+                  <p>Try a different search term or filters.</p>
                 </div>
               ) : (
                 <div className="room-card-grid">
@@ -465,6 +566,23 @@ const RoomsPage: React.FC = () => {
                         <p className="room-card-description">
                           {room.description || "No description provided."}
                         </p>
+
+                        {room.facilities?.length > 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 6,
+                              marginBottom: 8,
+                            }}
+                          >
+                            {room.facilities.map((facility) => (
+                              <span key={facility} className="badge badge-neutral">
+                                {facility}
+                              </span>
+                            ))}
+                          </div>
+                        )}
 
                         <div className="room-card-footer">
                           <span className="room-card-footer-text">
@@ -504,6 +622,23 @@ const RoomsPage: React.FC = () => {
                   <p className="room-card-description">
                     {selectedRoom.description || "No description provided."}
                   </p>
+
+                  {selectedRoom.facilities?.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        marginBottom: 12,
+                      }}
+                    >
+                      {selectedRoom.facilities.map((facility) => (
+                        <span key={facility} className="badge badge-neutral">
+                          {facility}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="schedule-actions" style={{ marginBottom: 12 }}>
                     <button
