@@ -33,76 +33,91 @@ const LoginPage: React.FC = () => {
       const res = await loginApi({ email, password });
       login(res);
 
+      const role = res.role?.trim().toLowerCase();
+
+      const isAdminRoute = redirectTo?.startsWith("/admin");
+      const isEmployeeRoute =
+        redirectTo?.startsWith("/rooms") ||
+        redirectTo?.startsWith("/my-bookings");
+
       if (redirectTo) {
-        navigate(redirectTo, { replace: true });
-        return;
+        if (role === "admin" && isAdminRoute) {
+          navigate(redirectTo, { replace: true });
+          return;
+        }
+
+        if (role !== "admin" && isEmployeeRoute) {
+          navigate(redirectTo, { replace: true });
+          return;
+        }
       }
 
-      const role = res.role?.trim().toLowerCase();
-      if (role === "admin") navigate("/admin/dashboard", { replace: true });
-      else navigate("/rooms", { replace: true });
-    } catch (err: any) {
-      if (err.response?.status === 401) setError("Invalid credentials");
-      else setError("Something went wrong");
+      if (role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/rooms", { replace: true });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <div className="login-card-header">
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 20,
-            }}
-          >
-            <img
-              src={logo}
-              alt="Meetrix logo"
+      <div className="login-page">
+        <div className="login-card">
+          <div className="login-card-header">
+            <div
               style={{
-                width: 110,
-                height: "auto",
-                objectFit: "contain",
-                userSelect: "none",
-              }}
-            />
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 22,
-                fontWeight: 700,
-                color: "#08185c",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 20,
               }}
             >
-              Welcome to Meetrix
-            </h1>
+              <img
+                src={logo}
+                alt="Meetrix logo"
+                style={{
+                  width: 110,
+                  height: "auto",
+                  objectFit: "contain",
+                  userSelect: "none",
+                }}
+              />
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#08185c",
+                }}
+              >
+                Welcome to Meetrix
+              </h1>
+            </div>
+          </div>
+
+          <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
+
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: 13,
+              textAlign: "center",
+              color: "#6b7280",
+            }}
+          >
+            Don&apos;t have an account?{" "}
+            <Link to="/register" style={{ color: "#2563eb" }}>
+              Register
+            </Link>
           </div>
         </div>
-
-        <LoginForm onSubmit={handleLogin} loading={loading} error={error} />
-
-        <div
-          style={{
-            marginTop: 12,
-            fontSize: 13,
-            textAlign: "center",
-            color: "#6b7280",
-          }}
-        >
-          Don&apos;t have an account?{" "}
-          <Link to="/register" style={{ color: "#2563eb" }}>
-            Register
-          </Link>
-        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
-export default LoginPage;
+  export default LoginPage;

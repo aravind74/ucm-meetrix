@@ -304,6 +304,7 @@ body {
   padding: 16px 20px;
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
   border: 1px solid #e5e7eb;
+  overflow-y: auto;
 }
 
 .table-wrapper {
@@ -466,6 +467,7 @@ body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
+  align-content: start;
 }
 
 .room-card {
@@ -474,6 +476,7 @@ body {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   padding: 12px 14px;
+  align-self: start;
   background: #ffffff;
   cursor: pointer;
   transition: box-shadow 0.15s ease, border-color 0.15s ease,
@@ -1060,4 +1063,96 @@ body {
 .dashboard-chart-wrapper {
   width: 100%;
   height: 320px;
+}
+
+.facilities-select {
+  min-width: 180px;
+  flex: 1 1 180px;
+}
+
+/* Main control (matches input/select) */
+.facilities-select .react-select__control {
+  min-height: 34px;
+  height: 34px;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Hover */
+.facilities-select .react-select__control:hover {
+  border-color: #d1d5db;
+}
+
+/* Focus (match your input focus) */
+.facilities-select .react-select__control--is-focused {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px #2563eb33;
+}
+
+/* Value container */
+.facilities-select .react-select__value-container {
+  padding: 0 8px;
+}
+
+/* Input spacing fix */
+.facilities-select .react-select__input-container {
+  margin: 0;
+  padding: 0;
+}
+
+/* Placeholder */
+.facilities-select .react-select__placeholder {
+  color: black;
+  font-size: 14px;
+}
+
+/* Selected text */
+.facilities-select .react-select__multi-value {
+  background: #e5e7eb;
+  border-radius: 6px;
+}
+
+.facilities-select .react-select__multi-value__label {
+  font-size: 12px;
+  color: #374151;
+}
+
+/* Remove button inside chip */
+.facilities-select .react-select__multi-value__remove:hover {
+  background: #d1d5db;
+}
+
+/* Remove separator line */
+.facilities-select .react-select__indicator-separator {
+  display: none;
+}
+
+/* Dropdown arrow */
+.facilities-select .react-select__dropdown-indicator {
+  padding: 0 8px;
+  color: #6b7280;
+}
+
+/* Dropdown menu */
+.facilities-select .react-select__menu {
+  z-index: 30;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* Options */
+.facilities-select .react-select__option {
+  font-size: 14px;
+}
+
+.facilities-select .react-select__option--is-focused {
+  background: #f3f4f6;
+}
+
+.facilities-select .react-select__option--is-selected {
+  background: #e0e7ff;
+  color: #111827;
 }

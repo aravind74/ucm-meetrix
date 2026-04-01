@@ -5,4 +5,5 @@ export interface Room {
     floor: number;
     description: string;
     isAccessible: boolean;
+    facilities: string[];
   }

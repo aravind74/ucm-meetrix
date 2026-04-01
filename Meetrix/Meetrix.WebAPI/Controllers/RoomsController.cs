@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using Azure.Core;
 using Meetrix.Core.Contracts;
 using Meetrix.Core.DTOs;
 using Meetrix.Core.Models;
+using Meetrix.Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -24,69 +26,49 @@ namespace Meetrix.WebAPI.Controllers
 
         // POST: api/rooms
         [HttpPost]
-        public async Task<IActionResult> CreateRoom([FromBody] RoomRequestDto dto)
+        public async Task<IActionResult> CreateRoom([FromBody] RoomRequestDto request, CancellationToken ct)
         {
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // DTO → Core
-            var room = _mapper.Map<RoomSummary>(dto);
+            var userId = GetUserIdFromClaims();
 
-            room.LastUpdatedBy = GetUserIdFromClaims();
-
-            // Core → Service → DB
-            var created = await _roomService.CreateRoomAsync(room);
-
-            // Core → DTO
-            var response = _mapper.Map<RoomResponseDto>(created);
-
-            return CreatedAtAction(nameof(Get), new { id = response.RoomId }, response);
+            try
+            {
+                var result = await _roomService.CreateRoomAsync(request, userId, ct);
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         // GET /api/rooms?minCapacity=6&isAccessible=true
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] int? minCapacity, [FromQuery] bool? isAccessible, CancellationToken ct)
         {
-            var rooms = await _roomService.GetRoomsAsync(minCapacity, isAccessible, ct);
-
-            var result = rooms.Select(r => new RoomResponseDto(
-                r.RoomId,
-                r.RoomName,
-                r.Capacity,
-                r.Floor,
-                r.IsAccessible,
-                r.Description,
-                r.LastUpdatedBy,
-                r.LastUpdated,
-                r.IsActive    
-            ));
-
+            var result = await _roomService.GetRoomsAsync(minCapacity, isAccessible, ct);
             return Ok(new { items = result });
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateRoom(int id, [FromBody] RoomResponseDto dto)
+        public async Task<IActionResult> UpdateRoom(int id, [FromBody] RoomSummary request, CancellationToken ct)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (id != dto.RoomId)
+            if (id != request.RoomId)
                 return BadRequest("Route id and RoomId do not match.");
 
             int userId = GetUserIdFromClaims();
 
-            var success = await _roomService.UpdateRoomAsync(
-                new RoomSummary
-                {
-                    RoomId = dto.RoomId,
-                    RoomName = dto.RoomName,
-                    Capacity = dto.Capacity,
-                    Floor = dto.Floor,
-                    Description = dto.Description,
-                    IsAccessible = dto.IsAccessible,
-                    LastUpdatedBy = userId,
-                }
-            );
+            var success = await _roomService.UpdateRoomAsync(request, userId, ct);
 
             if (!success)
                 return NotFound();
