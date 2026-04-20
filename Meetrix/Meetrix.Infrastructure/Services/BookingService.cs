@@ -18,16 +18,18 @@ namespace Meetrix.Infrastructure.Services
         private readonly IWaitlistService _waitlistService;
         private readonly INotificationClient _notificationClient;
         private readonly IGoogleCalendarService _googleCalendarService;
+        private readonly IRoomService _roomService;
 
-        public BookingService(AppDbContext db, IWaitlistService waitlistService, INotificationClient notificationClient, IGoogleCalendarService googleCalendarService)
+        public BookingService(AppDbContext db, IWaitlistService waitlistService, INotificationClient notificationClient, IGoogleCalendarService googleCalendarService, IRoomService roomService)
         {
             _db = db;
             _waitlistService = waitlistService;
             _notificationClient = notificationClient;
             _googleCalendarService = googleCalendarService;
+            _roomService = roomService;
         }
 
-        public async Task<BookingSummary> CreateBookingAsync(BookingRequestDto request, int userId, CancellationToken ct = default)
+        public async Task<BookingSummary> CreateBookingAsync(BookingRequestDto request, int userId, bool isReassign = false, CancellationToken ct = default)
         {
             if (request.StartTime >= request.EndTime)
                 throw new ArgumentException("End time must be after start time.");
@@ -41,7 +43,7 @@ namespace Meetrix.Infrastructure.Services
             var hasConflict = await _db.Bookings.AnyAsync(b =>
                 b.RoomId == request.RoomId &&
                 b.IsActive == true &&
-                b.Status != "Cancelled" &&
+                (b.Status != "Cancelled"  || b.Status != "NoShow") &&
                 b.StartTime < request.EndTime &&
                 b.EndTime > request.StartTime,
                 ct);
@@ -69,15 +71,30 @@ namespace Meetrix.Infrastructure.Services
 
             if (user != null)
             {
-                await _notificationClient.SendBookingCreatedAsync(new BookingNotificationRequestDto
+                if(!isReassign)
                 {
-                    ToEmail = user.Email ?? string.Empty,
-                    UserName = user.FirstName + " " + user.LastName?? user.Email ?? "",
-                    RoomName = room.RoomName,
-                    StartTime = entity.StartTime,
-                    EndTime = entity.EndTime,
-                    Purpose = entity.Purpose ?? string.Empty
-                }, ct);
+                    await _notificationClient.SendBookingCreatedAsync(new BookingNotificationRequestDto
+                    {
+                        ToEmail = user.Email ?? string.Empty,
+                        UserName = user.FirstName + " " + user.LastName ?? user.Email ?? "",
+                        RoomName = room.RoomName,
+                        StartTime = entity.StartTime,
+                        EndTime = entity.EndTime,
+                        Purpose = entity.Purpose ?? string.Empty
+                    }, ct);
+                }
+                else
+                {
+                    await _notificationClient.SendBookingReassignedAsync(new BookingNotificationRequestDto
+                    {
+                        ToEmail = user.Email ?? string.Empty,
+                        UserName = user.FirstName + " " + user.LastName ?? user.Email ?? "",
+                        RoomName = room.RoomName,
+                        StartTime = entity.StartTime,
+                        EndTime = entity.EndTime,
+                        Purpose = entity.Purpose ?? string.Empty
+                    }, ct);
+                }
             }
 
             var calendarEventId = await _googleCalendarService.CreateBookingEventAsync(room.RoomName, entity.StartTime, entity.EndTime, entity.Purpose, ct);
@@ -103,7 +120,7 @@ namespace Meetrix.Infrastructure.Services
         public async Task<IReadOnlyList<BookingSummary>> GetBookingsAsync(int userId, CancellationToken ct = default)
         {
             var bookings = await _db.Bookings
-                .Where(b => b.UserId == userId && b.IsActive == true)
+                .Where(b => b.UserId == userId)
                 .Include(b => b.Room)
                 .Include(b => b.User)
                 .OrderBy(b => b.StartTime)
@@ -298,11 +315,10 @@ namespace Meetrix.Infrastructure.Services
 
             return await _db.Bookings
                 .Where(b =>
-                    b.EndTime <= now ||
-                    b.Status == "Cancelled" ||
+                    (b.EndTime <= now && b.Status != "NoShow" && b.Status != "Cancelled") ||
                     b.Status == "Completed")
                 .Include(b => b.Room)
-                .Include (b => b.User)
+                .Include(b => b.User)
                 .OrderByDescending(b => b.StartTime)
                 .Select(b => new BookingSummary
                 {
@@ -325,7 +341,7 @@ namespace Meetrix.Infrastructure.Services
         public async Task<IReadOnlyList<BookingSummary>> GetCancelledBookingsAdminAsync(CancellationToken ct = default)
         {
             return await _db.Bookings
-                .Where(b => b.Status == "Cancelled")
+                .Where(b => b.Status == "Cancelled" || b.Status == "NoShow")
                 .Include(b => b.Room)
                 .Include(b => b.User)
                 .OrderByDescending(b => b.LastUpdated)
@@ -439,7 +455,7 @@ namespace Meetrix.Infrastructure.Services
                     StartTime = booking.StartTime,
                     EndTime = booking.EndTime,
                     Purpose = booking.Purpose ?? string.Empty,
-                    CheckInLink = checkInLink
+                    Link = checkInLink
                 }, ct);
 
                 booking.CheckInReminderSentAt = now;
@@ -517,6 +533,103 @@ namespace Meetrix.Infrastructure.Services
                 TopRooms = topRooms,
                 PeakHours = peakHours
             };
+        }
+
+        public async Task<BookingSummary> CancelAndReAssign(int bookingId, CancellationToken ct = default)
+        {
+            var booking = await _db.Bookings.Where(b => b.BookingId == bookingId).Include(b => b.User).FirstOrDefaultAsync();
+
+            if (booking == null)
+            {
+                throw new InvalidOperationException("Booking not found.");
+            }
+
+            booking.Status = "Cancelled";
+            booking.IsActive = false;
+
+            await _db.SaveChangesAsync(ct);
+
+            var room = await _db.Rooms.FirstOrDefaultAsync(r => r.RoomId == booking.RoomId, ct);
+
+            if (room == null)
+            {
+                throw new InvalidOperationException("Original room not found.");
+            }
+
+            // Convert accessibility to the values expected by GetAlternativeRoomsAsync
+            var accessFilter = (bool)room.IsAccesible ? "accessible" : "standard";
+
+            // Convert numeric capacity to the values expected by GetAlternativeRoomsAsync
+            string capacityFilter;
+            if (room.Capacity >= 1 && room.Capacity <= 4)
+            {
+                capacityFilter = "small";
+            }
+            else if (room.Capacity >= 5 && room.Capacity <= 10)
+            {
+                capacityFilter = "medium";
+            }
+            else
+            {
+                capacityFilter = "large";
+            }
+
+            // Fetch facility names using Room_Facilities + Facilities join
+            var facilities = await (
+                from rf in _db.Room_Facilities
+                join f in _db.Facilities on rf.FacilityId equals f.FacilityId
+                where rf.RoomId == booking.RoomId
+                select f.FacilityName
+            )
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct()
+            .ToListAsync(ct);
+
+            var alternativeRoomRequest = new AlternativeRoomsRequestDto
+            {
+                ExcludeRoomId = booking.RoomId,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                AccessFilter = accessFilter,
+                CapacityFilter = capacityFilter,
+                Facilities = facilities
+            };
+
+            var alternativeRooms = await _roomService.GetAlternativeRoomsAsync(alternativeRoomRequest);
+
+            if (alternativeRooms == null || alternativeRooms.Count == 0)
+            {
+                var link =
+                    $"http://localhost:5173/rooms";
+
+                await _notificationClient.SendBookingNotReassignedAsync(new BookingNotificationRequestDto
+                {
+                    ToEmail = booking.User.Email ?? string.Empty,
+                    UserName = booking.User.FirstName + " " + booking.User.LastName ?? booking.User.Email ?? "User",
+                    RoomName = booking.Room.RoomName,
+                    StartTime = booking.StartTime,
+                    EndTime = booking.EndTime,
+                    Purpose = booking.Purpose ?? string.Empty,
+                    Link = link
+                }, ct);
+                return new BookingSummary
+                {
+                    Message = "The booking has been canceled, but no matching alternative rooms were available."
+                };
+            }
+
+            var newBookingRequest = new BookingRequestDto
+            {
+                RoomId = alternativeRooms[0].RoomId,
+                StartTime = booking.StartTime,
+                EndTime = booking.EndTime,
+                Purpose = booking.Purpose
+            };
+
+            var newBooking = await CreateBookingAsync(newBookingRequest, booking.UserId, true);
+
+            return newBooking;
         }
 
     }

@@ -14,6 +14,6 @@ namespace Meetrix.Core.DTOs
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public string Purpose { get; set; } = string.Empty;
-        public string? CheckInLink { get; set; }
+        public string? Link { get; set; }
     }
 }

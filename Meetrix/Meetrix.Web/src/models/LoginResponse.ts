@@ -4,4 +4,5 @@ export interface LoginResponse {
     email: string;
     fullName: string;
     role: string;
+    isDifferentlyAbled: boolean | null;
 }

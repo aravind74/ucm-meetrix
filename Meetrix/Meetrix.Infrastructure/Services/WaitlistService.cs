@@ -160,9 +160,6 @@ namespace Meetrix.Infrastructure.Services
                 b.EndTime > startTime,
                 ct);
 
-            if (hasConflict)
-                return false;
-
             var booking = new Booking
             {
                 UserId = nextWaitlist.UserId,
@@ -170,7 +167,7 @@ namespace Meetrix.Infrastructure.Services
                 StartTime = nextWaitlist.StartTime,
                 EndTime = nextWaitlist.EndTime,
                 Purpose = "Auto-assigned from waitlist",
-                Status = "Scheduled",
+                Status = hasConflict? "Expired": "Scheduled",
                 LastUpdatedBy = nextWaitlist.UserId,
                 LastUpdated = DateTime.Now,
                 IsActive = true

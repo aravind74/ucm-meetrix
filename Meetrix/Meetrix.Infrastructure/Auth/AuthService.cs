@@ -39,7 +39,7 @@ public sealed class AuthService : IAuthService
         return entity.UserId;
     }
 
-    public async Task<(bool ok, int userId, string email, string fullName, string roleName)> ValidateCredentialsAsync(string email, string password, CancellationToken ct = default)
+    public async Task<(bool ok, int userId, string email, string fullName, string roleName, bool? isDifferentlyAbled)> ValidateCredentialsAsync(string email, string password, CancellationToken ct = default)
     {
         email = email.Trim().ToLowerInvariant();
 
@@ -48,13 +48,13 @@ public sealed class AuthService : IAuthService
             .AsNoTracking()
             .SingleOrDefaultAsync(u => u.Email == email && u.IsActive == true, ct);
 
-        if (user is null) return (false, 0, "", "", "");
+        if (user is null) return (false, 0, "", "", "", false);
 
         var ok = BcryptPasswordHasher.Verify(password, user.PasswordHash!);
-        if (!ok) return (false, 0, "", "", "");
+        if (!ok) return (false, 0, "", "", "", false);
 
         var fullName = string.Join(' ', new[] { user.FirstName, user.LastName }.Where(s => !string.IsNullOrWhiteSpace(s)));
         var roleName = user.UserRole?.RoleName ?? "Employee";
-        return (true, user.UserId, user.Email!, fullName, roleName);
+        return (true, user.UserId, user.Email!, fullName, roleName, user.IsDifferentlyAbled);
     }
 }

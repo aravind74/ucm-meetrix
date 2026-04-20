@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Select from "react-select";
-import { getRooms } from "../api/room-service";
+import { getAlternativeRooms, getRooms } from "../api/room-service";
 import { createBooking, getRoomAvailability } from "../api/booking-service";
 import { joinWaitlist } from "../api/waitlist-service";
 import type { Room } from "../models/Room";
@@ -27,26 +27,36 @@ const minuteOptions = ["00", "15", "30", "45"];
 const meridiemOptions: Meridiem[] = ["AM", "PM"];
 
 const RoomsPage: React.FC = () => {
+  //Auth context to get user info
   const { auth } = useAuth();
   const currentUserId = auth?.userId;
+  const isDifferentlyAbled = auth?.isDifferentlyAbled;
 
+  //All rooms for the left panel
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  //Set all the filters for the rooms
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
+    new Date().toLocaleDateString("en-CA")
   );
-  const [accessFilter, setAccessFilter] = useState<"all" | "accessible" | "standard">("all");
+  const [accessFilter, setAccessFilter] = useState<"all" | "accessible" | "standard">(
+    () => (isDifferentlyAbled ? "accessible" : "all")
+  );
   const [capacityFilter, setCapacityFilter] = useState<"any" | "small" | "medium" | "large">("any");
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
+
+  //The room currently selected on the left panel
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
+  // Slots for the selected room and date
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
 
+  //Booking modal states
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -61,9 +71,18 @@ const RoomsPage: React.FC = () => {
 
   const [purpose, setPurpose] = useState("");
 
+  //Waitlist states
   const [waitlistLoadingKey, setWaitlistLoadingKey] = useState<string | null>(null);
   const [waitlistError, setWaitlistError] = useState<string | null>(null);
 
+  // Alternative rooms modal states
+  const [isAlternativesModalOpen, setIsAlternativesModalOpen] = useState(false);
+  const [alternativeRooms, setAlternativeRooms] = useState<Room[]>([]);
+  const [alternativeLoading, setAlternativeLoading] = useState(false);
+  const [alternativeError, setAlternativeError] = useState<string | null>(null);
+  const [alternativeSlot, setAlternativeSlot] = useState<AvailabilitySlot | null>(null);
+
+  //Load rooms
   useEffect(() => {
     const loadRooms = async () => {
       try {
@@ -91,6 +110,7 @@ const RoomsPage: React.FC = () => {
     loadRooms();
   }, []);
 
+  //Load room availability
   useEffect(() => {
     const loadAvailability = async () => {
       if (!selectedRoom) {
@@ -289,7 +309,8 @@ const RoomsPage: React.FC = () => {
     if (start < now) return;
 
     const startParts = extract12HourParts(slot.startTime);
-    const endParts = extract12HourParts(slot.endTime);
+    const endDate = new Date(start.getTime() + 30 * 60000);
+    const endParts = extract12HourParts(endDate.toISOString());
 
     setStartHour(startParts.hour);
     setStartMinute(startParts.minute);
@@ -400,7 +421,71 @@ const RoomsPage: React.FC = () => {
     }
 
     return true;
-  });
+  }); const closeAlternativesModal = () => {
+    if (alternativeLoading) return;
+
+    setIsAlternativesModalOpen(false);
+    setAlternativeError(null);
+    setAlternativeRooms([]);
+    setAlternativeSlot(null);
+  };
+
+  const loadAlternativeRooms = async (slot: AvailabilitySlot) => {
+    if (!selectedRoom) return;
+
+    try {
+      setAlternativeLoading(true);
+      setAlternativeError(null);
+      setAlternativeRooms([]);
+      setAlternativeSlot(slot);
+      setIsAlternativesModalOpen(true);
+
+      const rooms = await getAlternativeRooms({
+        excludeRoomId: selectedRoom.roomId,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        accessFilter,
+        capacityFilter,
+        facilities: selectedFacilities,
+      });
+
+      setAlternativeRooms(rooms);
+    } catch (err: any) {
+      console.error("Failed to load alternative rooms", err);
+      setAlternativeError("Failed to load alternative rooms.");
+      setAlternativeRooms([]);
+    } finally {
+      setAlternativeLoading(false);
+    }
+  };
+
+  const handleSelectAlternativeRoom = (room: Room) => {
+    if (!alternativeSlot) return;
+
+    const startParts = extract12HourParts(alternativeSlot.startTime);
+    const endParts = extract12HourParts(alternativeSlot.endTime);
+
+    setSelectedRoom(room);
+
+    setStartHour(startParts.hour);
+    setStartMinute(startParts.minute);
+    setStartMeridiem(startParts.meridiem);
+
+    setEndHour(endParts.hour);
+    setEndMinute(endParts.minute);
+    setEndMeridiem(endParts.meridiem);
+
+    setBookingError(null);
+
+    setIsAlternativesModalOpen(false);
+    setAlternativeError(null);
+    setAlternativeRooms([]);
+    setAlternativeSlot(null);
+
+    setIsBookingModalOpen(true);
+  };
+
+
 
   if (loading) {
     return (
@@ -555,9 +640,8 @@ const RoomsPage: React.FC = () => {
                           </div>
 
                           <span
-                            className={`badge ${
-                              room.isAccessible ? "badge-success-light" : "badge-muted"
-                            }`}
+                            className={`badge ${room.isAccessible ? "badge-success-light" : "badge-muted"
+                              }`}
                           >
                             {room.isAccessible ? "Accessible" : "Standard"}
                           </span>
@@ -715,14 +799,25 @@ const RoomsPage: React.FC = () => {
                                 </button>
 
                                 {canJoinWaitlist && (
-                                  <button
-                                    type="button"
-                                    className="btn-ghost btn-xs"
-                                    onClick={() => handleJoinWaitlist(slot)}
-                                    disabled={waitlistLoadingKey === slotKey}
-                                  >
-                                    {waitlistLoadingKey === slotKey ? "Joining..." : "Join Waitlist"}
-                                  </button>
+                                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                    <button
+                                      type="button"
+                                      className="btn-ghost btn-xs"
+                                      onClick={() => handleJoinWaitlist(slot)}
+                                      disabled={waitlistLoadingKey === slotKey}
+                                    >
+                                      {waitlistLoadingKey === slotKey ? "Joining..." : "Join Waitlist"}
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      className="btn-ghost btn-xs"
+                                      onClick={() => loadAlternativeRooms(slot)}
+                                      disabled={alternativeLoading}
+                                    >
+                                      Find Alternatives
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                             );
@@ -740,6 +835,7 @@ const RoomsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Booking Modal */}
       {isBookingModalOpen && selectedRoom && (
         <div className="modal-backdrop">
           <div className="modal-card">
@@ -879,6 +975,104 @@ const RoomsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Alternatives Modal */}
+      {isAlternativesModalOpen && (
+        <div className="modal-backdrop">
+          <div className="modal-card alternatives-modal-card">
+            <h2 className="modal-title">Suggested Rooms</h2>
+            <p className="modal-subtitle">
+              {alternativeSlot
+                ? `Available alternatives for ${formatTime12Hour(
+                  alternativeSlot.startTime
+                )} - ${formatTime12Hour(alternativeSlot.endTime)} on ${selectedDate}.`
+                : "Available alternative rooms."}
+            </p>
+
+            <div className="modal-body">
+              {alternativeLoading ? (
+                <div className="empty-state">
+                  <h3>Loading alternatives...</h3>
+                </div>
+              ) : alternativeError ? (
+                <div className="empty-state">
+                  <h3>Could not load alternatives</h3>
+                  <p>{alternativeError}</p>
+                </div>
+              ) : alternativeRooms.length === 0 ? (
+                <div className="empty-state">
+                  <h3>No alternatives available</h3>
+                  <p>No matching rooms are free for this slot.</p>
+                </div>
+              ) : (
+                <div className="alternative-room-list">
+                  {alternativeRooms.map((room) => (
+                    <div key={room.roomId} className="room-card alternative-room-card">
+                      <div className="room-card-header">
+                        <div>
+                          <h3 className="room-card-title">{room.roomName}</h3>
+                          <p className="room-card-subtitle">
+                            Floor {room.floor ?? 0} · {room.capacity} seats
+                          </p>
+                        </div>
+
+                        <span
+                          className={`badge ${room.isAccessible ? "badge-success-light" : "badge-muted"
+                            }`}
+                        >
+                          {room.isAccessible ? "Accessible" : "Standard"}
+                        </span>
+                      </div>
+
+                      <p className="room-card-description">
+                        {room.description || "No description provided."}
+                      </p>
+
+                      {room.facilities?.length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                            marginBottom: 10,
+                          }}
+                        >
+                          {room.facilities.map((facility) => (
+                            <span key={facility} className="badge badge-neutral">
+                              {facility}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="alternative-room-footer">
+                        <button
+                          type="button"
+                          className="btn-primary btn-sm"
+                          onClick={() => handleSelectAlternativeRoom(room)}
+                        >
+                          Use this room
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={closeAlternativesModal}
+                disabled={alternativeLoading}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

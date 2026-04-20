@@ -76,7 +76,7 @@ namespace Meetrix.WebAPI.Controllers
             );
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return Ok(new LoginResponseDto(jwt, res.userId, res.email, res.fullName, res.roleName));
+            return Ok(new LoginResponseDto(jwt, res.userId, res.email, res.fullName, res.roleName, res.isDifferentlyAbled));
         }
     }
 }

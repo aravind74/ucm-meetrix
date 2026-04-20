@@ -21,5 +21,6 @@ namespace Meetrix.Core.Models
         public DateTime? LastUpdated { get; set; }
         public bool? IsActive { get; set; }
         public DateTime? CheckedInAt { get; set; }
+        public string? Message { get; set; }
     }
 }

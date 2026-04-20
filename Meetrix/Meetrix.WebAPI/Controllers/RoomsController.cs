@@ -91,6 +91,13 @@ namespace Meetrix.WebAPI.Controllers
             return NoContent();
         }
 
+        [HttpPost("alternatives")]
+        public async Task<ActionResult<List<RoomSummary>>> GetAlternativeRooms([FromBody] AlternativeRoomsRequestDto request)
+        {
+            var rooms = await _roomService.GetAlternativeRoomsAsync(request);
+            return Ok(rooms);
+        }
+
         private int GetUserIdFromClaims()
         {
             // Try NameIdentifier first (since you set it)

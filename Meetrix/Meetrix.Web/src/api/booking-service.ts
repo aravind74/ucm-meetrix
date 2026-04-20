@@ -52,3 +52,8 @@ export async function getCancelledBookingsAdmin(): Promise<Booking[]> {
 export async function checkInBooking(bookingId: number): Promise<void> {
   await api.post(`/bookings/${bookingId}/check-in`);
 }
+
+export async function cancelAndReassign(bookingId: number): Promise<Booking> {
+  const response = await api.post(`/admin/bookings/${bookingId}/cancelandreassign`);
+  return response.data.items.result;
+}
