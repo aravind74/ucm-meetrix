@@ -8,5 +8,7 @@ namespace Meetrix.NotificationService.Contracts
         Task SendBookingCancelledAsync(BookingNotificationRequestDto request, CancellationToken ct = default);
         Task SendWaitlistAssignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default);
         Task SendCheckInReminderAsync(BookingNotificationRequestDto request, CancellationToken ct = default);
+        Task SendBookingReassignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default);
+        Task SendBookingNotReassignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default);
     }
 }

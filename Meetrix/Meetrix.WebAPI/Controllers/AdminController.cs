@@ -1,4 +1,5 @@
 ﻿using Meetrix.Core.Contracts;
+using Meetrix.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +37,13 @@ namespace Meetrix.WebAPI.Controllers
         {
             var result = await _bookingService.GetCancelledBookingsAdminAsync(ct);
             return Ok(new { items = result });
+        }
+
+        [HttpPost("{bookingId:int}/cancelandreassign")]
+        public async Task<IActionResult> CancelAndReAssign(int bookingId, CancellationToken ct)
+        {
+            var result = _bookingService.CancelAndReAssign(bookingId, ct);
+            return Ok(new {items = result});
         }
     }
 }

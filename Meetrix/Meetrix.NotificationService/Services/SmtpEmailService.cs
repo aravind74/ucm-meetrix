@@ -88,12 +88,49 @@ namespace Meetrix.NotificationService.Services
                 End: {request.EndTime}
 
                 Please check in using this link:
-                {request.CheckInLink}
+                {request.Link}
 
                 Regards,
                 Meetrix
                 """;
 
+            return SendEmailAsync(request.ToEmail, subject, body, ct);
+        }
+
+        public Task SendBookingReassignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default)
+        {
+            var subject = "Meetrix Booking Reassigned";
+            var body = $"""
+                Hello {request.UserName},
+                Your booking has been reassigned to a different room.
+                New Room: {request.RoomName}
+                Start: {request.StartTime}
+                End: {request.EndTime}
+                Purpose: {request.Purpose}
+                Regards,
+                Meetrix
+                """;
+            return SendEmailAsync(request.ToEmail, subject, body, ct);
+        }
+
+        public Task SendBookingNotReassignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default)
+        {
+            var subject = "Booking Canceled and Not Reassigned";
+            var body = $"""
+                Hello {request.UserName},
+                Your booking has been canceled and unfortunately could not be reassigned, as no matching rooms with similar facilities 
+                were available. You can book a new room using the link below if you find a suitable one. We regret the inconvenience caused.
+
+                Please book an alternative room using this link:
+                {request.Link}
+
+                Canceled Room: {request.RoomName}
+                Start: {request.StartTime}
+                End: {request.EndTime}
+                Purpose: {request.Purpose}
+                Regards,
+                Meetrix
+                """;
             return SendEmailAsync(request.ToEmail, subject, body, ct);
         }
 

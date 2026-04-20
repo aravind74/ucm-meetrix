@@ -174,7 +174,7 @@ const MyBookingsPage: React.FC = () => {
 
   const canCancel = (booking: Booking) => {
     const status = booking.status?.toLowerCase();
-    return status !== "cancelled" && status !== "completed";
+    return status !== "cancelled" && status !== "completed" && status !== "noshow";
   };
 
   return (

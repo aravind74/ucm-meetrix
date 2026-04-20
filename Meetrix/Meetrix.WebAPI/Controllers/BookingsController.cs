@@ -30,7 +30,7 @@ namespace Meetrix.WebAPI.Controllers
 
             try
             {
-                var result = await _bookingService.CreateBookingAsync(request, userId, ct);
+                var result = await _bookingService.CreateBookingAsync(request, userId, false, ct);
                 return Ok(result);
             }
             catch (ArgumentException ex)

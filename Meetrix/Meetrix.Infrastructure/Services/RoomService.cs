@@ -143,5 +143,140 @@ namespace Meetrix.Infrastructure.Services
             await _db.SaveChangesAsync();
             return true;
         }
+
+        public async Task<List<RoomSummary>> GetAlternativeRoomsAsync(AlternativeRoomsRequestDto request)
+        {
+            if (request.StartTime >= request.EndTime)
+            {
+                return new List<RoomSummary>();
+            }
+
+            // Step 1: Start with candidate rooms
+            var roomsQuery = _db.Rooms
+                .Where(r => r.RoomId != request.ExcludeRoomId)
+                .AsQueryable();
+
+            // Accessibility filter
+            if (request.AccessFilter.Equals("accessible", StringComparison.OrdinalIgnoreCase))
+            {
+                roomsQuery = roomsQuery.Where(r => r.IsAccesible == true);
+            }
+            else if (request.AccessFilter.Equals("standard", StringComparison.OrdinalIgnoreCase))
+            {
+                roomsQuery = roomsQuery.Where(r => r.IsAccesible == false);
+            }
+
+            // Capacity filter
+            if (request.CapacityFilter.Equals("small", StringComparison.OrdinalIgnoreCase))
+            {
+                roomsQuery = roomsQuery.Where(r => r.Capacity >= 1 && r.Capacity <= 4);
+            }
+            else if (request.CapacityFilter.Equals("medium", StringComparison.OrdinalIgnoreCase))
+            {
+                roomsQuery = roomsQuery.Where(r => r.Capacity >= 5 && r.Capacity <= 10);
+            }
+            else if (request.CapacityFilter.Equals("large", StringComparison.OrdinalIgnoreCase))
+            {
+                roomsQuery = roomsQuery.Where(r => r.Capacity >= 11);
+            }
+
+            var candidateRooms = await roomsQuery
+                .Select(r => new
+                {
+                    r.RoomId,
+                    r.RoomName,
+                    r.Capacity,
+                    r.Floor,
+                    r.Description,
+                    r.IsAccesible
+                })
+                .ToListAsync();
+
+            if (!candidateRooms.Any())
+            {
+                return new List<RoomSummary>();
+            }
+
+            var candidateRoomIds = candidateRooms.Select(r => r.RoomId).ToList();
+
+            // Step 2: Get facilities for candidate rooms using Room_Facility + Facility
+            var roomFacilityMappings = await (
+                from rf in _db.Room_Facilities
+                join f in _db.Facilities on rf.FacilityId equals f.FacilityId
+                where candidateRoomIds.Contains(rf.RoomId)
+                select new
+                {
+                    rf.RoomId,
+                    f.FacilityName
+                }
+            ).ToListAsync();
+
+            var facilitiesByRoomId = roomFacilityMappings
+                .GroupBy(x => x.RoomId)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.FacilityName?.Trim())
+                          .Where(x => !string.IsNullOrWhiteSpace(x))
+                          .Distinct(StringComparer.OrdinalIgnoreCase)
+                          .ToList()
+                );
+
+            // Step 3: Apply selected facilities filter
+            if (request.Facilities != null && request.Facilities.Count > 0)
+            {
+                candidateRooms = candidateRooms
+                    .Where(room =>
+                    {
+                        var roomFacilities = facilitiesByRoomId.TryGetValue(room.RoomId, out var list)
+                            ? list
+                            : new List<string>();
+
+                        return request.Facilities.All(selected =>
+                            roomFacilities.Any(rf =>
+                                string.Equals(rf, selected?.Trim(), StringComparison.OrdinalIgnoreCase)));
+                    })
+                    .ToList();
+
+                if (!candidateRooms.Any())
+                {
+                    return new List<RoomSummary>();
+                }
+
+                candidateRoomIds = candidateRooms.Select(r => r.RoomId).ToList();
+            }
+
+            // Step 4: Exclude conflicting bookings
+            var conflictingRoomIds = await _db.Bookings
+                .Where(b =>
+                    candidateRoomIds.Contains(b.RoomId) &&
+                    b.IsActive == true &&
+                    b.Status != "Cancelled" &&
+                    request.StartTime < b.EndTime &&
+                    request.EndTime > b.StartTime)
+                .Select(b => b.RoomId)
+                .Distinct()
+                .ToListAsync();
+
+            // Step 5: Build final response
+            var result = candidateRooms
+                .Where(r => !conflictingRoomIds.Contains(r.RoomId))
+                .Select(r => new RoomSummary
+                {
+                    RoomId = r.RoomId,
+                    RoomName = r.RoomName,
+                    Capacity = r.Capacity,
+                    Floor = r.Floor,
+                    Description = r.Description,
+                    IsAccessible = r.IsAccesible,
+                    Facilities = facilitiesByRoomId.TryGetValue(r.RoomId, out var facilities)
+                        ? facilities.OrderBy(x => x).ToList()
+                        : new List<string>()
+                })
+                .OrderBy(r => r.Capacity)
+                .ThenBy(r => r.RoomName)
+                .ToList();
+
+            return result;
+        }
     }
 }

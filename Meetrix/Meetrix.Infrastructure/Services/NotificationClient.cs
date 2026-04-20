@@ -41,6 +41,16 @@ namespace Meetrix.Infrastructure.Services
             await PostAsync("api/notifications/checkin-reminder", request, ct);
         }
 
+        public async Task SendBookingReassignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default)
+        {
+            await PostAsync("api/notifications/booking-reassigned", request, ct);
+        }
+
+        public async Task SendBookingNotReassignedAsync(BookingNotificationRequestDto request, CancellationToken ct = default)
+        {
+            await PostAsync("/api/notifications/booking-not-reassigned", request, ct);
+        }
+
         private async Task PostAsync(string endpoint, BookingNotificationRequestDto request, CancellationToken ct)
         {
             try

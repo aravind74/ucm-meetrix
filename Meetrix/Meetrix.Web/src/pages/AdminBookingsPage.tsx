@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import type { Booking } from "../models/Booking";
 import { useToast } from "../components/ToastContext";
-import { getBookingHistoryAdmin, getCancelledBookingsAdmin, getCurrentBookingsAdmin } from "../api/booking-service";
+import { cancelAndReassign, getBookingHistoryAdmin, getCancelledBookingsAdmin, getCurrentBookingsAdmin } from "../api/booking-service";
 
 const AdminBookingsPage: React.FC = () => {
   useAuth();
@@ -89,6 +89,24 @@ const AdminBookingsPage: React.FC = () => {
     }
   };
 
+  const handleCancelAndReassign = (booking: Booking) => {
+    cancelAndReassign(booking.bookingId)
+      .then((updatedBooking) => {
+        setBookings((prev) =>
+          prev.map((b) => (b.bookingId === booking.bookingId ? updatedBooking : b))
+        );
+        if(updatedBooking.message) {
+          showToast(`${updatedBooking.message}`, "info");
+        } else {
+          showToast(`Booking cancelled and reassigned successfully.`, "success");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        showToast(`Failed to cancel and reassign booking.`, "error");
+      });
+  };
+
   if (loading) {
     return (
       <div className="admin-page">
@@ -151,7 +169,7 @@ const AdminBookingsPage: React.FC = () => {
               onClick={() => setTab("cancelled")}
               type="button"
             >
-              Cancelled
+              Cancelled/No-Show
             </button>
           </div>
         </div>
@@ -186,6 +204,7 @@ const AdminBookingsPage: React.FC = () => {
                   <th>End Time</th>
                   <th>Purpose</th>
                   <th>Status</th>
+                  {tab === "current" && <th>Action</th>}
                 </tr>
               </thead>
               <tbody>
@@ -209,6 +228,18 @@ const AdminBookingsPage: React.FC = () => {
                         {b.status || "—"}
                       </span>
                     </td>
+                    {tab === "current" && (
+                      <td>
+                        <button
+                          className="btn-ghost btn-xs"
+                          onClick={() => handleCancelAndReassign(b)}
+                          type="button"
+                          disabled={b.status?.toLowerCase() === "noshow"}
+                        >
+                          Cancel and Reassign
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

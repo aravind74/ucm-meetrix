@@ -10,4 +10,5 @@ export interface Booking {
   purpose?: string | null;
   lastUpdated?: string | null;
   checkedInAt?: string | null;
+  message?: string | null;
 }

@@ -10,7 +10,7 @@ namespace Meetrix.Core.Contracts
 {
     public interface IBookingService
     {
-        Task<BookingSummary> CreateBookingAsync(BookingRequestDto request, int userId, CancellationToken ct = default);
+        Task<BookingSummary> CreateBookingAsync(BookingRequestDto request, int userId, bool isReassign = false, CancellationToken ct = default);
         Task<IReadOnlyList<BookingSummary>> GetBookingsAsync(int userId, CancellationToken ct = default);
         Task<bool> CancelBookingAsync(int bookingId, int userId, CancellationToken ct = default);
         Task<RoomAvailabilityResponseDto> GetRoomAvailabilityAsync(int roomId, DateTime date, CancellationToken ct = default);
@@ -21,5 +21,6 @@ namespace Meetrix.Core.Contracts
         Task<int> AutoCancelNoShowBookingsAsync(CancellationToken ct = default);
         Task<int> SendCheckInRemindersAsync(CancellationToken ct = default);
         Task<AdminDashboardSummaryDto> GetAdminDashboardSummaryAsync(CancellationToken ct = default);
+        Task<BookingSummary> CancelAndReAssign(int bookingId, CancellationToken ct = default);
     }
 }

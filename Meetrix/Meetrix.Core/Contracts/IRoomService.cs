@@ -14,5 +14,6 @@ namespace Meetrix.Core.Contracts
         Task<IReadOnlyList<RoomSummary>> GetRoomsAsync(int? minCapacity, bool? isAccessible, CancellationToken ct = default);
         Task<bool> UpdateRoomAsync(RoomSummary request, int userId, CancellationToken ct);
         Task<bool> DeleteRoomAsync(int roomId, int updatedByUserId);
+        Task<List<RoomSummary>> GetAlternativeRoomsAsync(AlternativeRoomsRequestDto request);
     }
 }

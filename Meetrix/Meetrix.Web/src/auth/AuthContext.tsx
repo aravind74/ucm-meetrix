@@ -7,6 +7,7 @@ type AuthState = {
   email: string | null;
   fullName: string | null;
   role: string | null;
+  isDifferentlyAbled: boolean | null;
 };
 
 type AuthContextValue = {
@@ -27,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     email: null,
     fullName: null,
     role: null,
+    isDifferentlyAbled: null,
   });
 
   const [isReady, setIsReady] = useState(false);
@@ -54,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: data.email,
       fullName: data.fullName,
       role: data.role,
+      isDifferentlyAbled: data.isDifferentlyAbled,
     };
 
     setAuth(newAuth);
@@ -68,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: null,
       fullName: null,
       role: null,
+      isDifferentlyAbled: null,
     });
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem("meetrix_token");

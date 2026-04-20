@@ -28,7 +28,7 @@ const MyWaitlistPage: React.FC = () => {
 
   const activeEntries = useMemo(() => {
     return entries
-      .filter((entry) => (entry.status ?? "").toLowerCase() !== "cancelled")
+      .filter((entry) => (entry.status ?? "").toLowerCase() !== "cancelled" && (entry.status ?? "").toLowerCase() !== "expired")
       .sort((a, b) => {
         const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
         const bTime = b.startTime ? new Date(b.startTime).getTime() : 0;

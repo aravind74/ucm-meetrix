@@ -48,5 +48,20 @@ namespace Meetrix.NotificationService.Controllers
             await _emailService.SendCheckInReminderAsync(request, ct);
             return Ok(new { message = "Check-in reminder email sent." });
         }
+
+        [HttpPost("booking-reassigned")]
+        public async Task<IActionResult> SendBookingReassigned([FromBody] BookingNotificationRequestDto request, CancellationToken ct)
+        {
+            await _emailService.SendBookingReassignedAsync(request, ct);
+            return Ok(new { message = "Booking reassignment email sent." });
+        }
+
+        [HttpPost("booking-not-reassigned")]
+        public async Task<IActionResult> SendBookingNotReassigned([FromBody] BookingNotificationRequestDto request, CancellationToken ct)
+        {
+            await _emailService.SendBookingNotReassignedAsync(request, ct);
+            return Ok(new { message = "Booking canceled and not reasigned email sent." });
+        }
+
     }
 }

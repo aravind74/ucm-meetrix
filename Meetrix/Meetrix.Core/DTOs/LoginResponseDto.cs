@@ -5,5 +5,6 @@ public sealed record LoginResponseDto(
     int UserId,
     string Email,
     string FullName,
-    string Role
+    string Role,
+    bool? IsDifferentlyAbled
 );
