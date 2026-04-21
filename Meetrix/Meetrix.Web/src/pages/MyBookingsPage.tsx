@@ -4,7 +4,7 @@ import { cancelBooking, checkInBooking, getMyBookings } from "../api/booking-ser
 import type { Booking } from "../models/Booking";
 
 const MyBookingsPage: React.FC = () => {
-  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [tab, setTab] = useState<"upcoming" | "past" | "cancelled">("upcoming");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,10 +67,10 @@ const MyBookingsPage: React.FC = () => {
         const status = booking.status?.toLowerCase();
 
         return (
-          end <= now ||
-          status === "cancelled" ||
+          (end <= now ||
           status === "completed" ||
-          status === "noshow"
+          status === "noshow")
+          && status !== "cancelled"
         );
       })
       .sort((a, b) => {
@@ -80,7 +80,20 @@ const MyBookingsPage: React.FC = () => {
       });
   }, [bookings]);
 
-  const visibleBookings = tab === "upcoming" ? upcomingBookings : pastBookings;
+  const cancelledBookings = useMemo(() => {
+    return bookings
+      .filter((booking) => {
+        const status = booking.status?.toLowerCase();
+        return status === "cancelled";
+      })
+      .sort((a, b) => {
+        const aTime = a.startTime ? new Date(a.startTime).getTime() : 0;
+        const bTime = b.startTime ? new Date(b.startTime).getTime() : 0;
+        return bTime - aTime;
+      });
+  }, [bookings]);
+
+  const visibleBookings = tab === "upcoming" ? upcomingBookings : tab === "past" ? pastBookings : cancelledBookings;
 
   useEffect(() => {
     if (!highlightedBookingId || loading) return;
@@ -213,6 +226,13 @@ const MyBookingsPage: React.FC = () => {
             >
               Past
             </button>
+            <button
+              className={`tab-btn ${tab === "cancelled" ? "active" : ""}`}
+              onClick={() => setTab("cancelled")}
+              type="button"
+            >
+              Cancelled
+            </button>
           </div>
         </div>
       </div>
@@ -237,10 +257,15 @@ const MyBookingsPage: React.FC = () => {
                   You don’t have any reservations yet. Go to <strong>Rooms</strong> to book one.
                 </p>
               </>
-            ) : (
+            ) : tab === "past" ? (
               <>
                 <h3>No past bookings</h3>
                 <p>Your past reservations will appear here once available.</p>
+              </>
+            ) : (
+              <>
+                <h3>No cancelled bookings</h3>
+                <p>Your cancelled reservations will appear here once available.</p>
               </>
             )}
           </div>

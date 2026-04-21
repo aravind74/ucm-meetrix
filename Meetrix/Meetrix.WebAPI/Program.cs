@@ -23,7 +23,7 @@ builder.Services.AddCors(options =>
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
-        // .AllowCredentials(); // only if you plan to send cookies
+        // .AllowCredentials(); // only if you plan to send cookies or use other credential mechanisms. For JWT in Authorization header, this is not needed.
     });
 });
 
@@ -42,6 +42,7 @@ builder.Services.AddHttpClient<INotificationClient, NotificationClient>(client =
     client.BaseAddress = new Uri(builder.Configuration["NotificationService:BaseUrl"]!);
 });
 
+// Background worker to auto-cancel no-show bookings
 builder.Services.AddHostedService<BookingAutoCancelWorker>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
